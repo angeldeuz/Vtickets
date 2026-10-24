@@ -1,0 +1,13 @@
+node_modules/
+.npm-skill-cache/
+.supabase-skills-source/
+.pnpm-store/
+.npm-cache/
+.next/
+out/
+.env
+.env*
+!.env.example
+*.tsbuildinfo
+dist/
+build/

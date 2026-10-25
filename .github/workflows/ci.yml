@@ -1,0 +1,24 @@
+name: Verificar Vtickets
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @vtickets/backend prisma:validate
+      - run: pnpm db:verify-f02
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: pnpm test

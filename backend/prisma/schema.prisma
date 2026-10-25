@@ -1,0 +1,488 @@
+// Modelo objetivo de F02, basado en tickets_app al 25-10-2026.
+// SQL aplicado: database/migrations/20261025204118_align_f02_business_rules_20261025.sql.
+// No usar prisma migrate dev o db push sobre el proyecto remoto existente.
+// Las restricciones CHECK, índices parciales, permisos y RLS se versionan en SQL.
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["tickets_app"]
+}
+
+model Acceso {
+  id                       String     @id(map: "accesos_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketId                 String     @map("ticket_id") @db.Uuid
+  scannedBy                String     @map("scanned_by") @db.Uuid
+  accessedAt               DateTime   @map("accessed_at") @default(now()) @db.Timestamptz(6)
+  refScannedBy             Usuario @relation("rel_accesos_scanned_by_fkey", fields: [scannedBy], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  refTicketId              Ticket @relation("rel_accesos_ticket_id_fkey", fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([ticketId], map: "accesos_ticket_id_key")
+  @@map("accesos")
+  @@schema("tickets_app")
+}
+
+model Auditoria {
+  id                       String     @id(map: "auditoria_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorUserId              String?    @map("actor_user_id") @db.Uuid
+  action                   String     @db.Text
+  entityName               String     @map("entity_name") @db.Text
+  entityId                 String?    @map("entity_id") @db.Uuid
+  metadata                 Json       @default("{}") @db.JsonB
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  refActorUserId           Usuario? @relation("rel_auditoria_actor_user_id_fkey", fields: [actorUserId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  @@index([createdAt(sort: Desc)], map: "auditoria_created_idx")
+  @@map("auditoria")
+  @@schema("tickets_app")
+}
+
+model Categoria {
+  id                       String     @id(map: "categories_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                     String     @db.Text
+  slug                     String     @db.Text
+  description              String?    @db.Text
+  isActive                 Boolean    @map("is_active") @default(true)
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime   @map("updated_at") @default(now()) @db.Timestamptz(6)
+  fromEventoCategoryId     Evento[] @relation("rel_events_category_id_fkey")
+  @@unique([slug], map: "categories_slug_key")
+  @@map("categorias")
+  @@schema("tickets_app")
+}
+
+model CompraDetalle {
+  id                       String     @id(map: "compra_detalles_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purchaseId               String     @map("purchase_id") @db.Uuid
+  eventId                  String     @map("event_id") @db.Uuid
+  ticketTypeId             String     @map("ticket_type_id") @db.Uuid
+  quantity                 Int        @db.Integer
+  unitPriceCents           BigInt     @map("unit_price_cents") @db.BigInt
+  lineTotalCents           BigInt     @map("line_total_cents") @db.BigInt
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  refPurchaseIdEventId     Compra @relation("rel_compra_detalles_purchase_id_event_id_fkey", fields: [purchaseId, eventId], references: [id, eventId], onDelete: Restrict, onUpdate: NoAction)
+  refTicketTypeIdEventId   TipoTicket @relation("rel_compra_detalles_ticket_type_id_event_id_fkey", fields: [ticketTypeId, eventId], references: [id, eventId], onDelete: Restrict, onUpdate: NoAction)
+  fromTicketPurchaseDetailIdPurchaseId Ticket[] @relation("rel_tickets_purchase_detail_id_purchase_id_fkey")
+  @@unique([id, purchaseId], map: "compra_detalles_id_purchase_id_key")
+  @@unique([purchaseId, ticketTypeId], map: "compra_detalles_purchase_id_ticket_type_id_key")
+  @@index([ticketTypeId], map: "compra_detalles_ticket_type_idx")
+  @@map("compra_detalles")
+  @@schema("tickets_app")
+}
+
+model Compra {
+  id                       String     @id(map: "compras_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reservationId            String     @map("reservation_id") @db.Uuid
+  customerId               String     @map("customer_id") @db.Uuid
+  eventId                  String     @map("event_id") @db.Uuid
+  status                   String     @default("awaiting_payment") @db.Text
+  totalCents               BigInt     @map("total_cents") @db.BigInt
+  currency                 String     @default("MXN") @db.Text
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime   @map("updated_at") @default(now()) @db.Timestamptz(6)
+  refCustomerId            Usuario @relation("rel_compras_customer_id_fkey", fields: [customerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  refEventId               Evento @relation("rel_compras_event_id_fkey", fields: [eventId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  refReservationIdEventIdCustomerId Reserva @relation("rel_compras_reservation_id_event_id_customer_id_fkey", fields: [reservationId, eventId, customerId], references: [id, eventId, customerId], onDelete: Restrict, onUpdate: NoAction)
+  fromCompraDetallePurchaseIdEventId CompraDetalle[] @relation("rel_compra_detalles_purchase_id_event_id_fkey")
+  fromPagoPurchaseId       Pago[] @relation("rel_pagos_purchase_id_fkey")
+  fromReembolsoPurchaseId  Reembolso[] @relation("rel_reembolsos_purchase_id_fkey")
+  @@unique([id, eventId], map: "compras_id_event_id_key")
+  @@unique([reservationId], map: "compras_reservation_id_key")
+  @@index([customerId, createdAt(sort: Desc)], map: "compras_customer_created_idx")
+  @@index([eventId, createdAt(sort: Desc), id], map: "compras_event_created_idx")
+  @@map("compras")
+  @@schema("tickets_app")
+}
+
+model EventoImagen {
+  id                       String     @id(map: "event_images_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId                  String     @map("event_id") @db.Uuid
+  storagePath              String     @map("storage_path") @db.Text
+  altText                  String?    @map("alt_text") @db.Text
+  isCover                  Boolean    @map("is_cover") @default(false)
+  sortOrder                Int        @map("sort_order") @default(0) @db.Integer
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  bucketId                 String     @map("bucket_id") @db.Text
+  refEventId               Evento @relation("rel_event_images_event_id_fkey", fields: [eventId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@unique([eventId, storagePath], map: "event_images_event_id_storage_path_key")
+  @@index([eventId], map: "event_images_event_id_idx")
+  @@map("evento_imagenes")
+  @@schema("tickets_app")
+}
+
+model Evento {
+  id                       String     @id(map: "events_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoryId               String     @map("category_id") @db.Uuid
+  venueId                  String     @map("venue_id") @db.Uuid
+  organizerId              String     @map("organizer_id") @db.Uuid
+  title                    String     @db.Text
+  slug                     String     @db.Text
+  summary                  String?    @db.Text
+  description              String?    @db.Text
+  startsAt                 DateTime   @map("starts_at") @db.Timestamptz(6)
+  endsAt                   DateTime   @map("ends_at") @db.Timestamptz(6)
+  timezone                 String     @db.Text
+  salesStartsAt            DateTime?  @map("sales_starts_at") @db.Timestamptz(6)
+  salesEndsAt              DateTime?  @map("sales_ends_at") @db.Timestamptz(6)
+  status                   String     @default("draft") @db.Text
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime   @map("updated_at") @default(now()) @db.Timestamptz(6)
+  capacityLimit            Int        @map("capacity_limit") @db.Integer
+  refOrganizerId           Usuario @relation("rel_eventos_organizer_id_fkey", fields: [organizerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  refCategoryId            Categoria @relation("rel_events_category_id_fkey", fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  refVenueId               Ubicacion @relation("rel_events_venue_id_fkey", fields: [venueId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fromCompraEventId        Compra[] @relation("rel_compras_event_id_fkey")
+  fromEventoImagenEventId  EventoImagen[] @relation("rel_event_images_event_id_fkey")
+  fromHistorialEscaneoEventId HistorialEscaneo[] @relation("rel_historial_escaneos_event_id_fkey")
+  fromPersonalEventoEventId PersonalEvento[] @relation("rel_event_staff_event_id_fkey")
+  fromReservaEventId       Reserva[] @relation("rel_reservas_event_id_fkey")
+  fromTipoTicketEventId    TipoTicket[] @relation("rel_ticket_types_event_id_fkey")
+  @@unique([slug], map: "events_slug_key")
+  @@index([categoryId], map: "events_category_id_idx")
+  @@index([organizerId], map: "events_organizer_id_idx")
+  @@index([venueId], map: "events_venue_id_idx")
+  @@map("eventos")
+  @@schema("tickets_app")
+}
+
+model HistorialEscaneo {
+  id                       String     @id(map: "historial_escaneos_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId                  String?    @map("event_id") @db.Uuid
+  ticketId                 String?    @map("ticket_id") @db.Uuid
+  scannedBy                String?    @map("scanned_by") @db.Uuid
+  result                   String     @db.Text
+  scannedAt                DateTime   @map("scanned_at") @default(now()) @db.Timestamptz(6)
+  refEventId               Evento? @relation("rel_historial_escaneos_event_id_fkey", fields: [eventId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  refScannedBy             Usuario? @relation("rel_historial_escaneos_scanned_by_fkey", fields: [scannedBy], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  refTicketId              Ticket? @relation("rel_historial_escaneos_ticket_id_fkey", fields: [ticketId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  @@index([eventId, scannedAt(sort: Desc)], map: "historial_escaneos_event_time_idx")
+  @@index([ticketId, scannedAt(sort: Desc)], map: "historial_escaneos_ticket_time_idx")
+  @@index([scannedBy, scannedAt(sort: Desc)], map: "historial_escaneos_scanner_time_idx")
+  @@map("historial_escaneos")
+  @@schema("tickets_app")
+}
+
+model IdempotenciaSolicitud {
+  id                       String     @id(map: "idempotencia_solicitudes_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                   String     @map("user_id") @db.Uuid
+  idempotencyKey           String     @map("idempotency_key") @db.Text
+  requestSha256            String     @map("request_sha256") @db.Text
+  status                   String     @default("processing") @db.Text
+  responseStatus           Int?       @map("response_status") @db.Integer
+  responseBody             Json?      @map("response_body") @db.JsonB
+  expiresAt                DateTime   @map("expires_at") @db.Timestamptz(6)
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  refUserId                Usuario @relation("rel_idempotencia_solicitudes_user_id_fkey", fields: [userId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([userId, idempotencyKey], map: "idempotencia_solicitudes_user_id_idempotency_key_key")
+  @@index([expiresAt], map: "idempotencia_expiration_idx")
+  @@map("idempotencia_solicitudes")
+  @@schema("tickets_app")
+}
+
+model Inventario {
+  ticketTypeId             String     @id(map: "inventarios_pkey") @map("ticket_type_id") @db.Uuid
+  reservedCount            Int        @map("reserved_count") @default(0) @db.Integer
+  soldCount                Int        @map("sold_count") @default(0) @db.Integer
+  updatedAt                DateTime   @map("updated_at") @default(now()) @db.Timestamptz(6)
+  refTicketTypeId          TipoTicket @relation("rel_inventarios_ticket_type_id_fkey", fields: [ticketTypeId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@map("inventarios")
+  @@schema("tickets_app")
+}
+
+model Notificacion {
+  id                       String     @id(map: "notificaciones_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                   String?    @map("user_id") @db.Uuid
+  channel                  String     @db.Text
+  notificationType         String     @map("notification_type") @db.Text
+  status                   String     @default("pending") @db.Text
+  dedupeKey                String?    @map("dedupe_key") @db.Text
+  payload                  Json       @default("{}") @db.JsonB
+  sentAt                   DateTime?  @map("sent_at") @db.Timestamptz(6)
+  readAt                   DateTime?  @map("read_at") @db.Timestamptz(6)
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  refUserId                Usuario? @relation("rel_notificaciones_user_id_fkey", fields: [userId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  @@unique([dedupeKey], map: "notificaciones_dedupe_key_key")
+  @@index([userId, createdAt(sort: Desc)], map: "notificaciones_user_created_idx")
+  @@map("notificaciones")
+  @@schema("tickets_app")
+}
+
+model OutboxTrabajo {
+  id                       String     @id(map: "outbox_trabajos_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobType                  String     @map("job_type") @db.Text
+  aggregateType            String     @map("aggregate_type") @db.Text
+  aggregateId              String     @map("aggregate_id") @db.Uuid
+  idempotencyKey           String?    @map("idempotency_key") @db.Text
+  payload                  Json       @db.JsonB
+  status                   String     @default("pending") @db.Text
+  attempts                 Int        @default(0) @db.Integer
+  availableAt              DateTime   @map("available_at") @default(now()) @db.Timestamptz(6)
+  lockedAt                 DateTime?  @map("locked_at") @db.Timestamptz(6)
+  lockedBy                 String?    @map("locked_by") @db.Text
+  lastError                String?    @map("last_error") @db.Text
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  completedAt              DateTime?  @map("completed_at") @db.Timestamptz(6)
+  @@unique([idempotencyKey], map: "outbox_trabajos_idempotency_key_key")
+  @@map("outbox_trabajos")
+  @@schema("tickets_app")
+}
+
+model Pago {
+  id                       String     @id(map: "pagos_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purchaseId               String     @map("purchase_id") @db.Uuid
+  provider                 String     @db.Text
+  externalPaymentId        String?    @map("external_payment_id") @db.Text
+  status                   String     @default("created") @db.Text
+  amountCents              BigInt     @map("amount_cents") @db.BigInt
+  currency                 String     @default("MXN") @db.Text
+  isTest                   Boolean    @map("is_test") @default(true)
+  isExtraCharge            Boolean    @map("is_extra_charge") @default(false)
+  verifiedAt               DateTime?  @map("verified_at") @db.Timestamptz(6)
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime   @map("updated_at") @default(now()) @db.Timestamptz(6)
+  refPurchaseId            Compra @relation("rel_pagos_purchase_id_fkey", fields: [purchaseId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fromReembolsoPaymentIdPurchaseId Reembolso[] @relation("rel_reembolsos_payment_id_purchase_id_fkey")
+  fromTicketPaymentIdPurchaseId Ticket[] @relation("rel_tickets_payment_id_purchase_id_fkey")
+  fromWebhookEventoPaymentId WebhookEvento[] @relation("rel_webhook_eventos_payment_id_fkey")
+  @@unique([id, purchaseId], map: "pagos_id_purchase_id_key")
+  @@unique([provider, externalPaymentId], map: "pagos_provider_external_payment_id_key")
+  @@index([purchaseId, createdAt(sort: Desc)], map: "pagos_purchase_created_idx")
+  @@map("pagos")
+  @@schema("tickets_app")
+}
+
+model PersonalEvento {
+  id                       String     @id(map: "event_staff_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId                  String     @map("event_id") @db.Uuid
+  userId                   String     @map("user_id") @db.Uuid
+  roleId                   String     @map("role_id") @db.Uuid
+  status                   String     @default("assigned") @db.Text
+  assignedBy               String?    @map("assigned_by") @db.Uuid
+  assignedAt               DateTime   @map("assigned_at") @default(now()) @db.Timestamptz(6)
+  startsAt                 DateTime?  @map("starts_at") @db.Timestamptz(6)
+  endsAt                   DateTime?  @map("ends_at") @db.Timestamptz(6)
+  refEventId               Evento @relation("rel_event_staff_event_id_fkey", fields: [eventId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  refRoleId                Rol @relation("rel_event_staff_role_id_fkey", fields: [roleId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  refAssignedBy            Usuario? @relation("rel_personal_eventos_assigned_by_fkey", fields: [assignedBy], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  refUserId                Usuario @relation("rel_personal_eventos_user_id_fkey", fields: [userId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([eventId, userId, roleId], map: "event_staff_event_id_user_id_role_id_key")
+  @@index([eventId], map: "event_staff_event_id_idx")
+  @@index([roleId], map: "event_staff_role_id_idx")
+  @@index([userId], map: "event_staff_user_id_idx")
+  @@index([userId, status], map: "personal_eventos_user_id_status_idx")
+  @@map("personal_eventos")
+  @@schema("tickets_app")
+}
+
+model Reembolso {
+  id                       String     @id(map: "reembolsos_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purchaseId               String     @map("purchase_id") @db.Uuid
+  paymentId                String     @map("payment_id") @db.Uuid
+  ticketId                 String?    @map("ticket_id") @db.Uuid
+  idempotencyKey           String     @map("idempotency_key") @db.Text
+  reason                   String?    @db.Text
+  reviewedBy               String?    @map("reviewed_by") @db.Uuid
+  reviewedAt               DateTime?  @map("reviewed_at") @db.Timestamptz(6)
+  status                   String     @default("requested") @db.Text
+  amountCents              BigInt     @map("amount_cents") @db.BigInt
+  providerRefundId         String?    @map("provider_refund_id") @db.Text
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime   @map("updated_at") @default(now()) @db.Timestamptz(6)
+  refPaymentIdPurchaseId   Pago @relation("rel_reembolsos_payment_id_purchase_id_fkey", fields: [paymentId, purchaseId], references: [id, purchaseId], onDelete: Restrict, onUpdate: NoAction)
+  refPurchaseId            Compra @relation("rel_reembolsos_purchase_id_fkey", fields: [purchaseId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  refTicketIdPurchaseId    Ticket? @relation("rel_reembolsos_ticket_id_purchase_id_fkey", fields: [ticketId, purchaseId], references: [id, purchaseId], onDelete: Restrict, onUpdate: NoAction)
+  refReviewedBy            Usuario? @relation("rel_reembolsos_reviewed_by_fkey", fields: [reviewedBy], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([paymentId, idempotencyKey], map: "reembolsos_payment_idempotency_key_key")
+  @@unique([ticketId, purchaseId], map: "reembolsos_ticket_id_purchase_id_key")
+  @@index([purchaseId, createdAt(sort: Desc)], map: "reembolsos_purchase_created_idx")
+  @@index([paymentId, purchaseId], map: "reembolsos_payment_purchase_idx")
+  @@map("reembolsos")
+  @@schema("tickets_app")
+}
+
+model ReservaDetalle {
+  id                       String     @id(map: "reserva_detalles_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reservationId            String     @map("reservation_id") @db.Uuid
+  eventId                  String     @map("event_id") @db.Uuid
+  ticketTypeId             String     @map("ticket_type_id") @db.Uuid
+  quantity                 Int        @db.Integer
+  unitPriceCents           BigInt     @map("unit_price_cents") @db.BigInt
+  lineTotalCents           BigInt     @map("line_total_cents") @db.BigInt
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  refReservationIdEventId  Reserva @relation("rel_reserva_detalles_reservation_id_event_id_fkey", fields: [reservationId, eventId], references: [id, eventId], onDelete: Restrict, onUpdate: NoAction)
+  refTicketTypeIdEventId   TipoTicket @relation("rel_reserva_detalles_ticket_type_id_event_id_fkey", fields: [ticketTypeId, eventId], references: [id, eventId], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([reservationId, ticketTypeId], map: "reserva_detalles_reservation_id_ticket_type_id_key")
+  @@index([ticketTypeId], map: "reserva_detalles_ticket_type_idx")
+  @@map("reserva_detalles")
+  @@schema("tickets_app")
+}
+
+model Reserva {
+  id                       String     @id(map: "reservas_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId               String     @map("customer_id") @db.Uuid
+  eventId                  String     @map("event_id") @db.Uuid
+  status                   String     @default("active") @db.Text
+  expiresAt                DateTime   @map("expires_at") @db.Timestamptz(6)
+  totalCents               BigInt     @map("total_cents") @default(0) @db.BigInt
+  currency                 String     @default("MXN") @db.Text
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime   @map("updated_at") @default(now()) @db.Timestamptz(6)
+  refCustomerId            Usuario @relation("rel_reservas_customer_id_fkey", fields: [customerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  refEventId               Evento @relation("rel_reservas_event_id_fkey", fields: [eventId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  fromCompraReservationIdEventIdCustomerId Compra[] @relation("rel_compras_reservation_id_event_id_customer_id_fkey")
+  fromReservaDetalleReservationIdEventId ReservaDetalle[] @relation("rel_reserva_detalles_reservation_id_event_id_fkey")
+  @@unique([id, eventId, customerId], map: "reservas_id_event_id_customer_id_key")
+  @@unique([id, eventId], map: "reservas_id_event_id_key")
+  @@index([customerId, status, createdAt(sort: Desc)], map: "reservas_customer_status_idx")
+  @@index([eventId, status, expiresAt], map: "reservas_event_status_expiration_idx")
+  @@map("reservas")
+  @@schema("tickets_app")
+}
+
+model Rol {
+  id                       String     @id(map: "roles_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code                     String     @db.Text
+  name                     String     @db.Text
+  description              String?    @db.Text
+  isSystem                 Boolean    @map("is_system") @default(false)
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  fromPersonalEventoRoleId PersonalEvento[] @relation("rel_event_staff_role_id_fkey")
+  fromUsuarioRolRoleId     UsuarioRol[] @relation("rel_user_roles_role_id_fkey")
+  @@unique([code], map: "roles_code_key")
+  @@map("roles")
+  @@schema("tickets_app")
+}
+
+model Ticket {
+  id                       String     @id(map: "tickets_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purchaseId               String     @map("purchase_id") @db.Uuid
+  purchaseDetailId         String     @map("purchase_detail_id") @db.Uuid
+  paymentId                String     @map("payment_id") @db.Uuid
+  ordinal                  Int        @db.Integer
+  publicCode               String     @map("public_code") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  credentialVersion        Int        @map("credential_version") @default(1) @db.SmallInt
+  credentialKeyId          String?    @map("credential_key_id") @db.Text
+  status                   String     @default("issued") @db.Text
+  issuedAt                 DateTime   @map("issued_at") @default(now()) @db.Timestamptz(6)
+  refPaymentIdPurchaseId   Pago @relation("rel_tickets_payment_id_purchase_id_fkey", fields: [paymentId, purchaseId], references: [id, purchaseId], onDelete: Restrict, onUpdate: NoAction)
+  refPurchaseDetailIdPurchaseId CompraDetalle @relation("rel_tickets_purchase_detail_id_purchase_id_fkey", fields: [purchaseDetailId, purchaseId], references: [id, purchaseId], onDelete: Restrict, onUpdate: NoAction)
+  fromAccesoTicketId       Acceso? @relation("rel_accesos_ticket_id_fkey")
+  fromHistorialEscaneoTicketId HistorialEscaneo[] @relation("rel_historial_escaneos_ticket_id_fkey")
+  fromReembolsoTicketIdPurchaseId Reembolso? @relation("rel_reembolsos_ticket_id_purchase_id_fkey")
+  @@unique([id, publicCode], map: "tickets_id_public_code_key")
+  @@unique([id, purchaseId], map: "tickets_id_purchase_id_key")
+  @@unique([publicCode], map: "tickets_public_code_key")
+  @@unique([purchaseDetailId, ordinal], map: "tickets_purchase_detail_id_ordinal_key")
+  @@index([paymentId], map: "tickets_payment_id_idx")
+  @@map("tickets")
+  @@schema("tickets_app")
+}
+
+model TipoTicket {
+  id                       String     @id(map: "ticket_types_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId                  String     @map("event_id") @db.Uuid
+  name                     String     @db.Text
+  description              String?    @db.Text
+  priceCents               BigInt     @map("price_cents") @default(0) @db.BigInt
+  currency                 String     @default("MXN") @db.Text
+  quantityTotal            Int        @map("quantity_total") @db.Integer
+  maxPerOrder              Int        @map("max_per_order") @default(4) @db.Integer
+  salesStartsAt            DateTime?  @map("sales_starts_at") @db.Timestamptz(6)
+  salesEndsAt              DateTime?  @map("sales_ends_at") @db.Timestamptz(6)
+  status                   String     @default("active") @db.Text
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime   @map("updated_at") @default(now()) @db.Timestamptz(6)
+  maxPerUser               Int        @map("max_per_user") @default(4) @db.Integer
+  refEventId               Evento @relation("rel_ticket_types_event_id_fkey", fields: [eventId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  fromCompraDetalleTicketTypeIdEventId CompraDetalle[] @relation("rel_compra_detalles_ticket_type_id_event_id_fkey")
+  fromInventarioTicketTypeId Inventario? @relation("rel_inventarios_ticket_type_id_fkey")
+  fromReservaDetalleTicketTypeIdEventId ReservaDetalle[] @relation("rel_reserva_detalles_ticket_type_id_event_id_fkey")
+  @@unique([eventId, name], map: "ticket_types_event_id_name_key")
+  @@unique([id, eventId], map: "tipos_ticket_id_event_id_key")
+  @@index([eventId], map: "ticket_types_event_id_idx")
+  @@map("tipos_ticket")
+  @@schema("tickets_app")
+}
+
+model Ubicacion {
+  id                       String     @id(map: "venues_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                     String     @db.Text
+  addressLine1             String?    @map("address_line1") @db.Text
+  addressLine2             String?    @map("address_line2") @db.Text
+  city                     String?    @db.Text
+  region                   String?    @db.Text
+  countryCode              String?    @map("country_code") @db.Text
+  postalCode               String?    @map("postal_code") @db.Text
+  latitude                 Decimal?   @db.Decimal(9, 6)
+  longitude                Decimal?   @db.Decimal(9, 6)
+  timezone                 String?    @db.Text
+  capacity                 Int?       @db.Integer
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime   @map("updated_at") @default(now()) @db.Timestamptz(6)
+  fromEventoVenueId        Evento[] @relation("rel_events_venue_id_fkey")
+  @@map("ubicaciones")
+  @@schema("tickets_app")
+}
+
+model UsuarioRol {
+  userId                   String     @map("user_id") @db.Uuid
+  roleId                   String     @map("role_id") @db.Uuid
+  assignedBy               String?    @map("assigned_by") @db.Uuid
+  assignedAt               DateTime   @map("assigned_at") @default(now()) @db.Timestamptz(6)
+  refRoleId                Rol @relation("rel_user_roles_role_id_fkey", fields: [roleId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  refAssignedBy            Usuario? @relation("rel_usuario_roles_assigned_by_fkey", fields: [assignedBy], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  refUserId                Usuario @relation("rel_usuario_roles_user_id_fkey", fields: [userId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@id([userId, roleId], map: "user_roles_pkey")
+  @@index([roleId], map: "usuario_roles_role_id_idx")
+  @@map("usuario_roles")
+  @@schema("tickets_app")
+}
+
+model Usuario {
+  // FK a auth.users(id): Auth la administra Supabase, no Prisma Migrate.
+  authUserId               String?    @map("auth_user_id") @db.Uuid
+  fullName                 String?    @map("full_name") @db.Text
+  phone                    String?    @db.Text
+  avatarUrl                String?    @map("avatar_url") @db.Text
+  status                   String     @default("active") @db.Text
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime   @map("updated_at") @default(now()) @db.Timestamptz(6)
+  id                       String     @id(map: "usuarios_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  anonymizedAt             DateTime?  @map("anonymized_at") @db.Timestamptz(6)
+  fromAccesoScannedBy      Acceso[] @relation("rel_accesos_scanned_by_fkey")
+  fromAuditoriaActorUserId Auditoria[] @relation("rel_auditoria_actor_user_id_fkey")
+  fromCompraCustomerId     Compra[] @relation("rel_compras_customer_id_fkey")
+  fromEventoOrganizerId    Evento[] @relation("rel_eventos_organizer_id_fkey")
+  fromHistorialEscaneoScannedBy HistorialEscaneo[] @relation("rel_historial_escaneos_scanned_by_fkey")
+  fromIdempotenciaSolicitudUserId IdempotenciaSolicitud[] @relation("rel_idempotencia_solicitudes_user_id_fkey")
+  fromNotificacionUserId   Notificacion[] @relation("rel_notificaciones_user_id_fkey")
+  fromPersonalEventoAssignedBy PersonalEvento[] @relation("rel_personal_eventos_assigned_by_fkey")
+  fromPersonalEventoUserId PersonalEvento[] @relation("rel_personal_eventos_user_id_fkey")
+  fromReservaCustomerId    Reserva[] @relation("rel_reservas_customer_id_fkey")
+  fromReembolsoReviewedBy  Reembolso[] @relation("rel_reembolsos_reviewed_by_fkey")
+  fromUsuarioRolAssignedBy UsuarioRol[] @relation("rel_usuario_roles_assigned_by_fkey")
+  fromUsuarioRolUserId     UsuarioRol[] @relation("rel_usuario_roles_user_id_fkey")
+  @@unique([authUserId], map: "usuarios_auth_user_id_key")
+  @@map("usuarios")
+  @@schema("tickets_app")
+}
+
+model WebhookEvento {
+  id                       String     @id(map: "webhook_eventos_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider                 String     @db.Text
+  externalEventId          String     @map("external_event_id") @db.Text
+  payloadSha256            String     @map("payload_sha256") @db.Text
+  safePayload              Json?      @map("safe_payload") @db.JsonB
+  status                   String     @default("received") @db.Text
+  attempts                 Int        @default(0) @db.Integer
+  nextAttemptAt            DateTime   @map("next_attempt_at") @default(now()) @db.Timestamptz(6)
+  processedAt              DateTime?  @map("processed_at") @db.Timestamptz(6)
+  lastError                String?    @map("last_error") @db.Text
+  createdAt                DateTime   @map("created_at") @default(now()) @db.Timestamptz(6)
+  paymentId                String?    @map("payment_id") @db.Uuid
+  refPaymentId             Pago? @relation("rel_webhook_eventos_payment_id_fkey", fields: [paymentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([provider, externalEventId], map: "webhook_eventos_provider_external_event_id_key")
+  @@map("webhook_eventos")
+  @@schema("tickets_app")
+}

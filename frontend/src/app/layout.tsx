@@ -11,5 +11,14 @@ export const metadata: Metadata = {
 // Layout: Next.js envuelve cada página con esta estructura compartida.
 // Se ejecuta en el servidor; los enlaces funcionan sin JavaScript del cliente.
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="es"><body><SiteHeader /><main>{children}</main><SiteFooter /></body></html>;
+  return (
+    <html lang="es-MX">
+      <body>
+        <a className="skip-link" href="#contenido">Saltar al contenido</a>
+        <SiteHeader />
+        <main id="contenido">{children}</main>
+        <SiteFooter />
+      </body>
+    </html>
+  );
 }

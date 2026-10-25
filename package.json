@@ -4,7 +4,10 @@
   "packageManager": "pnpm@10.28.2",
   "scripts": {
     "dev": "pnpm --filter @vtickets/frontend dev",
-    "build": "pnpm --filter @vtickets/frontend build",
-    "typecheck": "pnpm --filter @vtickets/frontend typecheck"
+    "dev:api": "pnpm --filter @vtickets/backend dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter @vtickets/backend test",
+    "db:verify-f02": "pnpm --filter @vtickets/backend db:verify-f02"
   }
 }

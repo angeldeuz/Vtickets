@@ -11,3 +11,7 @@ out/
 *.tsbuildinfo
 dist/
 build/
+backend/generated/
+.corepack-cache/
+.api-local.*.log
+.web-local.*.log

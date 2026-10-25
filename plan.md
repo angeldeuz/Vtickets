@@ -213,12 +213,12 @@ El desarrollador está comenzando con Next.js y NestJS. Las primeras implementac
 - [ ] Cerrar F03-T04: comprobar cierre de sesión y recuperación completa por correo con `localhost` como origen único; configurar un SMTP fiable para salir del límite del correo predeterminado.
 - [ ] Cerrar F03-T05: probar que el guard de roles rechaza al cliente sin privilegios y que la autorización de personal depende de una asignación vigente al evento. Cada ruta de negocio nueva repetirá su propia prueba de propiedad en su fase.
 - [ ] Cerrar F03-T06: revisar expiración, revocación y renovación de sesión, y comprobar que los límites de peticiones son adecuados para las rutas sensibles.
-- [ ] Revisar y confirmar los cambios de F02, diseño y F03 que hoy están sin commit en la rama `fase-2`, en particular la instantánea y el renombre de migración, `pnpm-lock.yaml` y las skills instaladas. Obtener un árbol de trabajo limpio antes de cortar `feature/f04-eventos-inventario` desde la base acordada. `main` y `fase-2` aún apuntan al commit inicial de F01.
+- [x] Revisar y confirmar los cambios de F02, diseño y F03 en `fase-2`, incluidos la instantánea y el renombre de migración, `pnpm-lock.yaml` y las skills instaladas. El commit `1d4d53d` quedó integrado en `main` por el merge `5e16293`; la rama `feature/f04-eventos-inventario` se creó desde allí con el árbol limpio.
 - [ ] Conectar un remoto Git si se quiere validar el workflow en GitHub y compartir la rama. No hay remoto configurado; esto no impide crear una rama local.
 
 La fase 04 depende de la fase 03. Una rama local para **cerrar F03** puede prepararse antes; el desarrollo funcional de F04 comienza después de cerrar las tareas anteriores o de registrar explícitamente cualquier cambio de dependencia en este plan.
 
-**Decisión de integración del propietario — 25 de octubre de 2026:** consolidar el avance actual de F02, diseño y F03 en `main` mediante merge y abrir una rama local `feature/f04-eventos-inventario`. La rama nueva es un punto de partida de Git; esta decisión no cambia los estados abiertos de F02-T05 y F03-T04/T05/T06 ni autoriza a dar por cumplida la aceptación de F03.
+**Integración local completada — 25 de octubre de 2026:** por petición del propietario, el avance de F02, diseño y F03 quedó en `fase-2` (`1d4d53d`) y se fusionó en `main` (`5e16293`). Se abrió la rama local `feature/f04-eventos-inventario` desde ese merge. La rama nueva es un punto de partida de Git; no cambia los estados abiertos de F02-T05 y F03-T04/T05/T06 ni da por cumplida la aceptación de F03. No hay remoto configurado ni se hizo push.
 
 ### Fase 04. Eventos, inventario y administración
 

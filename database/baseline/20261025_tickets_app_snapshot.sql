@@ -3,7 +3,7 @@
 -- Refleja el estado posterior a la migración remota 20261024065838 y anterior
 -- a la migración F02 20261025204118; no reaplicar la primera después de esta.
 -- Requiere una instancia Supabase limpia con auth.users y el rol postgres.
--- Aún debe validarse mediante restauración y comparación de catálogos.
+-- Validada el 28-10-2026 en Vtickets-pruebas mediante restauración y cotejo.
 
 DO $$
 BEGIN

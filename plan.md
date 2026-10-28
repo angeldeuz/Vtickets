@@ -160,7 +160,7 @@ El desarrollador está comenzando con Next.js y NestJS. Las primeras implementac
 
 **Dependencias:** fase 01.
 
-**Estado:** en curso desde el 25 de octubre de 2026. La fase 01 está aprobada y el propietario confirmó que la base de datos del proyecto Supabase de desarrollo y pruebas ya está creada. La revisión inicial mediante MCP del esquema, los datos y el historial de migraciones quedó registrada abajo. Los entregables de diseño y los pendientes de F02-T01 a F02-T07 están en [docs/fase-02](docs/fase-02/README.md); antes de modificar el esquema hay que contrastar lo existente con el modelo y las reglas de la fase 01.
+**Estado:** completada el 28 de octubre de 2026. La fase 01 está aprobada. La migración F02 se aplicó en Supabase de desarrollo y se reprodujo desde la línea base en `Vtickets-pruebas`, proyecto creado vacío por el propietario. El cotejo de tablas, columnas, restricciones, índices, políticas RLS y permisos coincidió con desarrollo. [Registro de F02](docs/fase-02/README.md). Las pruebas de concurrencia de operaciones reales corresponden a sus fases funcionales.
 
 **Registro de revisión de Supabase — 25 de octubre de 2026 (solo lectura):**
 
@@ -168,13 +168,13 @@ El desarrollador está comenzando con Next.js y NestJS. Las primeras implementac
 - Las 24 tablas tienen RLS habilitado y suman 37 claves foráneas. Cada tabla tiene una política `backend_runtime_access` para `tickets_app_runtime`. `anon` y `authenticated` no tienen uso del esquema ni permisos de lectura o inserción sobre estas tablas; `tickets_app_runtime` sí tiene esos permisos en las 24. Las políticas permiten las operaciones de ese rol, por lo que el backend debe aplicar la autorización de negocio prevista en la arquitectura.
 - `roles` contiene 3 registros. El resumen de tablas de Supabase reporta 0 registros en las otras 23 tablas de negocio; ese resumen puede ser estimado. Se verificaron 0 usuarios en `auth.users` y 0 buckets en `storage.buckets`.
 - En la revisión inicial Supabase registraba `20261024065838_align_tickets_app_with_plan_20261024`. El SQL local se alineó con esa versión en `database/migrations/20261024065838_align_tickets_app_with_plan_20261024.sql`; solo contiene ajustes y no crea las 24 tablas. F02 añadió la migración remota y local `20261025204118_align_f02_business_rules_20261025`.
-- Con autorización del propietario se instaló `@electric-sql/pglite@0.5.11` para una verificación local reproducible. `backend/scripts/verify-f02-schema.mjs` restauró la línea base en PostgreSQL embebido vacío, aplicó F02, repitió las semillas de roles y desarrollo y el alta de administrador con una identidad Auth simulada, y comprobó tablas, columnas, RLS, políticas, permisos y restricciones de ejemplo. La prueba pasó. Después se vinculó un administrador real de Auth en desarrollo y se comprobó que repetir el alta no duplica el rol ni la auditoría. Falta contrastar la restauración en una instancia **Supabase** limpia antes de cerrar F02-T05.
+- Con autorización del propietario se instaló `@electric-sql/pglite@0.5.11` para una verificación local reproducible. `backend/scripts/verify-f02-schema.mjs` restauró la línea base en PostgreSQL embebido vacío, aplicó F02, repitió las semillas de roles y desarrollo y el alta de administrador con una identidad Auth simulada, y comprobó tablas, columnas, RLS, políticas, permisos y restricciones de ejemplo. La prueba pasó. Después se vinculó un administrador real de Auth en desarrollo y se comprobó que repetir el alta no duplica el rol ni la auditoría. El 28 de octubre se contrastó la restauración en `Vtickets-pruebas`, una instancia Supabase limpia; el catálogo coincidió con desarrollo.
 
 - [x] F02-T01 — Desarrollar el modelo entidad-relación y esquema Prisma a partir de la arquitectura de tablas de la sección 7, validándolo contra las reglas de la fase 01.
 - [x] F02-T02 — Incorporar la asignación de personal a eventos y el registro necesario para idempotencia de pagos y reembolsos.
 - [x] F02-T03 — Definir claves, relaciones, índices y restricciones para identificadores únicos, importes, cantidades e integridad referencial.
 - [x] F02-T04 — Diseñar transacciones para reserva de inventario, confirmación de compras, emisión de tickets y consumo de accesos.
-- [ ] F02-T05 — Establecer migraciones del esquema de negocio, permisos y políticas RLS pertinentes, datos de desarrollo y procedimiento seguro de creación del administrador inicial vinculado con Supabase Auth.
+- [x] F02-T05 — Establecer migraciones del esquema de negocio, permisos y políticas RLS pertinentes, datos de desarrollo y procedimiento seguro de creación del administrador inicial vinculado con Supabase Auth.
 - [x] F02-T06 — Documentar contratos REST para identidad, eventos públicos, administración, reservas, checkout, compras propias, pagos, webhooks, tickets y validación de accesos.
 - [x] F02-T07 — Definir autenticación, autorización, validación de entradas, paginación y respuestas de error en los contratos.
 
@@ -188,14 +188,14 @@ El desarrollador está comenzando con Next.js y NestJS. Las primeras implementac
 
 **Dependencias:** fase 02.
 
-**Estado — 25 de octubre de 2026:** en curso por petición del propietario. [Registro de implementación y pruebas](docs/fase-03/README.md). La estructura NestJS, validación, salud, contratos iniciales de identidad, formularios Supabase SSR, verificación JWKS, guards, worker outbox y CI están en el repositorio. PostgreSQL conecta con un rol mínimo. El propietario accedió a su cuenta, cambió la contraseña temporal y `/me` respondió 200; hay un único perfil con los roles `ADMINISTRADOR` y `CLIENTE`. Restan las pruebas completas de recuperación por correo, cierre de sesión y autorización de los dominios futuros, además de configurar correo Auth fiable. F02-T05 conserva el cotejo en una instancia Supabase limpia.
+**Estado — 28 de octubre de 2026:** F03 completada y su dependencia F02 cerrada. [Registro de implementación y pruebas](docs/fase-03/README.md). NestJS, Supabase SSR, verificación JWKS, guards, worker outbox y CI están en el repositorio. PostgreSQL conecta con un rol mínimo. El propietario comprobó acceso de administrador, recuperación por correo, cierre de sesión y registro de un cliente con Mailtrap Sandbox. El guard rechazó al cliente sin privilegios y una prueba transaccional en PostgreSQL real comprobó asignaciones de acceso vigentes, vencidas y retiradas. Cada dominio futuro debe repetir sus pruebas de propiedad. El envío de correo real sigue pendiente para producción.
 
 - [x] F03-T01 — Crear la estructura de frontend, backend por dominios, documentación, migraciones e infraestructura propuesta en el mapa maestro.
 - [x] F03-T02 — Configurar entornos, variables de ejemplo sin secretos, ejecución local y base de datos de desarrollo.
 - [x] F03-T03 — Preparar validación de configuración, manejo de errores, logs y comprobaciones de salud.
-- [ ] F03-T04 — Integrar registro, inicio y cierre de sesión y recuperación con Supabase Auth; implementar perfil de negocio y verificación de tokens en NestJS.
-- [ ] F03-T05 — Implementar roles, autorización en backend y controles de propiedad de recursos.
-- [ ] F03-T06 — Aplicar protección de credenciales, limitación de intentos y controles de sesión acordes con la autenticación elegida.
+- [x] F03-T04 — Integrar registro, inicio y cierre de sesión y recuperación con Supabase Auth; implementar perfil de negocio y verificación de tokens en NestJS.
+- [x] F03-T05 — Implementar roles, autorización en backend y controles de propiedad de recursos.
+- [x] F03-T06 — Aplicar protección de credenciales, limitación de intentos y controles de sesión acordes con la autenticación elegida.
 - [x] F03-T07 — Configurar integración continua con compilación, análisis estático y pruebas pertinentes.
 - [x] F03-T08 — Preparar el worker y la tabla outbox con reclamación segura, reintentos y recuperación de trabajos interrumpidos.
 - [x] F03-T09 — Comentar en español la estructura inicial de Next.js y NestJS y el primer flujo de identidad conforme a la sección 1.3, explicando los conceptos nuevos junto al código.
@@ -209,16 +209,16 @@ El desarrollador está comenzando con Next.js y NestJS. Las primeras implementac
 **Por revisar antes de iniciar F04 en una rama nueva:**
 
 - [x] Confirmar que `backend/.env`, `frontend/.env.local` y los logs locales están ignorados por Git; la clave administrativa temporal se retiró y no se guarda en el repositorio.
-- [ ] Cerrar F02-T05: restaurar la línea base y aplicar F02 en una instancia Supabase limpia; comparar esquema, RLS y permisos con desarrollo. La prueba PGlite y el administrador real ya están hechos.
-- [ ] Cerrar F03-T04: comprobar cierre de sesión y recuperación completa por correo con `localhost` como origen único; configurar un SMTP fiable para salir del límite del correo predeterminado.
-- [ ] Cerrar F03-T05: probar que el guard de roles rechaza al cliente sin privilegios y que la autorización de personal depende de una asignación vigente al evento. Cada ruta de negocio nueva repetirá su propia prueba de propiedad en su fase.
-- [ ] Cerrar F03-T06: revisar expiración, revocación y renovación de sesión, y comprobar que los límites de peticiones son adecuados para las rutas sensibles.
+- [x] Cerrar F02-T05: se restauró la línea base y se aplicó F02 en `Vtickets-pruebas`; coinciden 24 tablas, 223 columnas, 147 restricciones, 85 índices, 24 políticas y los privilegios revisados con desarrollo. La prueba PGlite y el administrador real ya estaban hechos.
+- [x] Cerrar F03-T04: registrar y confirmar un cliente de prueba con `localhost` como origen único. La recuperación completa por correo y el cierre de sesión funcionaron con Mailtrap Sandbox; el envío real queda para antes de producción.
+- [x] Cerrar F03-T05: el guard rechaza `CLIENTE` y admite `ADMINISTRADOR`; con el perfil real de cliente y una transacción de prueba en PostgreSQL se comprobó que solo una asignación vigente concede acceso al evento. Cada ruta de negocio nueva repetirá su propia prueba de propiedad en su fase.
+- [x] Cerrar F03-T06 para desarrollo: la renovación usa cookies de Supabase SSR; NestJS rechaza JWT vencidos y de otra audiencia, y la prueba HTTP confirma `429` tras solicitudes repetidas. Supabase revoca el refresh token al salir, mientras el access token firmado conserva validez hasta `exp`; antes de ventas reales se revisará si las operaciones sensibles requieren comprobación inmediata de sesión y límites propios.
 - [x] Revisar y confirmar los cambios de F02, diseño y F03 en `fase-2`, incluidos la instantánea y el renombre de migración, `pnpm-lock.yaml` y las skills instaladas. El commit `1d4d53d` quedó integrado en `main` por el merge `5e16293`; la rama `feature/f04-eventos-inventario` se creó desde allí con el árbol limpio.
 - [ ] Conectar un remoto Git si se quiere validar el workflow en GitHub y compartir la rama. No hay remoto configurado; esto no impide crear una rama local.
 
-La fase 04 depende de la fase 03. Una rama local para **cerrar F03** puede prepararse antes; el desarrollo funcional de F04 comienza después de cerrar las tareas anteriores o de registrar explícitamente cualquier cambio de dependencia en este plan.
+La fase 04 depende de la fase 03. Tras el cierre de F02 y F03 el 28 de octubre, sus dependencias están satisfechas para comenzar F04 en la rama local existente.
 
-**Integración local completada — 25 de octubre de 2026:** por petición del propietario, el avance de F02, diseño y F03 quedó en `fase-2` (`1d4d53d`) y se fusionó en `main` (`5e16293`). Se abrió la rama local `feature/f04-eventos-inventario` desde ese merge. La rama nueva es un punto de partida de Git; no cambia los estados abiertos de F02-T05 y F03-T04/T05/T06 ni da por cumplida la aceptación de F03. No hay remoto configurado ni se hizo push.
+**Integración local completada — 25 de octubre de 2026:** por petición del propietario, el avance de F02, diseño y F03 quedó en `fase-2` (`1d4d53d`) y se fusionó en `main` (`5e16293`). Se abrió la rama local `feature/f04-eventos-inventario` desde ese merge. En ese momento F02-T05 y F03-T04/T05/T06 seguían abiertos; quedaron cerrados el 28 de octubre. No hay remoto configurado ni se hizo push.
 
 ### Fase 04. Eventos, inventario y administración
 

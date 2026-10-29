@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../database/prisma.service";
 import type { CategoryCreate, CategoryUpdate, ListOptions, VenueCreate, VenueUpdate } from "./catalog.schemas";
 
@@ -20,6 +20,9 @@ export class CatalogService {
   }
 
   async categories(options: ListOptions) {
+    if (options.cursor && !(await this.database.client.categoria.findUnique({ where: { id: options.cursor }, select: { id: true } }))) {
+      throw new BadRequestException({ code: "INVALID_CURSOR", message: "Cursor de categoría no válido" });
+    }
     const rows = await this.database.client.categoria.findMany({
       orderBy: { id: "asc" },
       take: options.limit + 1,
@@ -48,6 +51,9 @@ export class CatalogService {
   }
 
   async venues(options: ListOptions) {
+    if (options.cursor && !(await this.database.client.ubicacion.findUnique({ where: { id: options.cursor }, select: { id: true } }))) {
+      throw new BadRequestException({ code: "INVALID_CURSOR", message: "Cursor de ubicación no válido" });
+    }
     const rows = await this.database.client.ubicacion.findMany({
       orderBy: { id: "asc" },
       take: options.limit + 1,

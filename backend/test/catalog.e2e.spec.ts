@@ -1,7 +1,6 @@
 import { INestApplication, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Test } from "@nestjs/testing";
-import { jest } from "@jest/globals";
 import request from "supertest";
 import { AdminCatalogController, PublicCategoriesController } from "../src/catalog/catalog.controller";
 import { CatalogService } from "../src/catalog/catalog.service";
@@ -13,14 +12,16 @@ import { RolesGuard } from "../src/identity/roles.guard";
 
 describe("catálogo F04-T01", () => {
   let app: INestApplication;
+  let categoryWrites = 0;
+  let venueWrites = 0;
   const catalog = {
-    publicCategories: jest.fn().mockResolvedValue([{ id: "1", name: "Música", slug: "musica", description: null }]),
-    categories: jest.fn().mockResolvedValue({ items: [], nextCursor: null }),
-    venues: jest.fn().mockResolvedValue({ items: [], nextCursor: null }),
-    createCategory: jest.fn().mockImplementation(async (data: unknown) => data),
-    updateCategory: jest.fn(),
-    createVenue: jest.fn().mockImplementation(async (data: unknown) => data),
-    updateVenue: jest.fn(),
+    publicCategories: async () => [{ id: "1", name: "Música", slug: "musica", description: null }],
+    categories: async () => ({ items: [], nextCursor: null }),
+    venues: async () => ({ items: [], nextCursor: null }),
+    createCategory: async (data: unknown) => { categoryWrites++; return data; },
+    updateCategory: async () => ({}),
+    createVenue: async (data: unknown) => { venueWrites++; return data; },
+    updateVenue: async () => ({}),
   };
 
   beforeAll(async () => {
@@ -56,7 +57,7 @@ describe("catálogo F04-T01", () => {
     await request(app.getHttpServer()).post("/api/v1/admin/categories").send({ name: "Música", slug: "musica" }).expect(401);
     await request(app.getHttpServer()).post("/api/v1/admin/categories").set("Authorization", "Bearer client")
       .send({ name: "Música", slug: "musica" }).expect(403);
-    expect(catalog.createCategory).not.toHaveBeenCalled();
+    expect(categoryWrites).toBe(0);
   });
 
   it("valida slug y zona horaria antes de escribir", async () => {
@@ -64,14 +65,14 @@ describe("catálogo F04-T01", () => {
       .send({ name: "Música", slug: "Música!" }).expect(400);
     await request(app.getHttpServer()).post("/api/v1/admin/venues").set("Authorization", "Bearer admin")
       .send({ name: "Teatro", timezone: "Invalid/Zone" }).expect(400);
-    expect(catalog.createCategory).not.toHaveBeenCalled();
-    expect(catalog.createVenue).not.toHaveBeenCalled();
+    expect(categoryWrites).toBe(0);
+    expect(venueWrites).toBe(0);
   });
 
   it("acepta datos válidos de administrador", async () => {
     const response = await request(app.getHttpServer()).post("/api/v1/admin/venues").set("Authorization", "Bearer admin")
       .send({ name: "Teatro de la Ciudad", city: "Saltillo", countryCode: "MX", timezone: "America/Monterrey", capacity: 500 }).expect(201);
     expect(response.body.capacity).toBe(500);
-    expect(catalog.createVenue).toHaveBeenCalledTimes(1);
+    expect(venueWrites).toBe(1);
   });
 });

@@ -39,6 +39,7 @@ Todas las rutas de esta sección requieren rol `administrador` confirmado en el 
 
 | Método y ruta | Solicitud principal | Respuesta |
 |---|---|---|
+| `GET /admin/categories` y `GET /admin/venues` | `limit?` (1–100, por defecto 50), `cursor?` UUID | `200` `{ items, nextCursor }`, ordenados por `id`. |
 | `POST /admin/categories` y `PATCH /admin/categories/{id}` | Nombre, slug, descripción, activo. | `201` o `200`; `409` por slug repetido. |
 | `POST /admin/venues` y `PATCH /admin/venues/{id}` | Dirección, ciudad, país, zona IANA y capacidad. | `201` o `200`. |
 | `POST /admin/events` | `{ title, slug, categoryId, venueId, description, startsAt, endsAt, timezone, capacityLimit }` | `201` evento `draft`. |

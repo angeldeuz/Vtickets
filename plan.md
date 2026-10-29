@@ -214,7 +214,7 @@ El desarrollador está comenzando con Next.js y NestJS. Las primeras implementac
 - [x] Cerrar F03-T05: el guard rechaza `CLIENTE` y admite `ADMINISTRADOR`; con el perfil real de cliente y una transacción de prueba en PostgreSQL se comprobó que solo una asignación vigente concede acceso al evento. Cada ruta de negocio nueva repetirá su propia prueba de propiedad en su fase.
 - [x] Cerrar F03-T06 para desarrollo: la renovación usa cookies de Supabase SSR; NestJS rechaza JWT vencidos y de otra audiencia, y la prueba HTTP confirma `429` tras solicitudes repetidas. Supabase revoca el refresh token al salir, mientras el access token firmado conserva validez hasta `exp`; antes de ventas reales se revisará si las operaciones sensibles requieren comprobación inmediata de sesión y límites propios.
 - [x] Revisar y confirmar los cambios de F02, diseño y F03 en `fase-2`, incluidos la instantánea y el renombre de migración, `pnpm-lock.yaml` y las skills instaladas. El commit `1d4d53d` quedó integrado en `main` por el merge `5e16293`; la rama `feature/f04-eventos-inventario` se creó desde allí con el árbol limpio.
-- [ ] Conectar un remoto Git si se quiere validar el workflow en GitHub y compartir la rama. No hay remoto configurado; esto no impide crear una rama local.
+- [x] Conectar GitHub y validar el workflow: `main` y la rama F04 están publicadas; el PR #1 de cierre F02/F03 se integró con CI aprobada.
 
 La fase 04 depende de la fase 03. Tras el cierre de F02 y F03 el 28 de octubre, sus dependencias están satisfechas para comenzar F04 en la rama local existente.
 
@@ -224,7 +224,7 @@ La fase 04 depende de la fase 03. Tras el cierre de F02 y F03 el 28 de octubre, 
 
 **Dependencias:** fase 03.
 
-- [ ] F04-T01 — Implementar gestión de categorías y ubicaciones.
+- [x] F04-T01 — Implementar gestión de categorías y ubicaciones. API pública y administrativa con validación y pruebas; [registro de F04](docs/fase-04/README.md).
 - [ ] F04-T02 — Implementar creación, edición, publicación y despublicación de eventos con validación de fechas y estado.
 - [ ] F04-T03 — Integrar carga de imágenes en almacenamiento externo con controles de tipo, tamaño y permisos.
 - [ ] F04-T04 — Implementar tipos de boleto, precios, stock, límites y ventanas de venta.

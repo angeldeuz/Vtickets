@@ -13,6 +13,8 @@ npm.cmd --prefix backend run start
 
 La API escucha en `http://127.0.0.1:3001` y la documentación OpenAPI se sirve en `/api/docs`. `GET /api/v1/me`, `PATCH /api/v1/me` y `GET /api/v1/me/roles` requieren un token de Supabase Auth. NestJS verifica firma ES256/RS256, emisor, audiencia y expiración antes de crear o leer el perfil. Los roles vigentes se consultan en PostgreSQL; no se toman de metadatos editables del usuario.
 
+F04-T01 añade `GET /api/v1/categories` para categorías activas. Las rutas `GET`, `POST` y `PATCH` de `/api/v1/admin/categories` y `/api/v1/admin/venues` requieren el rol `ADMINISTRADOR`. Las listas administrativas admiten `limit` y `cursor`; las escrituras validan los campos y rechazan slugs repetidos. Con el `DATABASE_URL` de desarrollo, `node scripts/verify-f04-catalog.mjs` desde `backend/` comprueba lectura y escritura de las tablas en una transacción que se revierte.
+
 El worker se compila con la API y se inicia con `npm.cmd --prefix backend run worker` cuando `DATABASE_URL` está configurada. Solo reclama tipos de trabajo con handler registrado; los handlers de pagos, reservas y correo se incorporarán en sus fases.
 
 El esquema contiene los 24 modelos y los cambios de [fase 02](../docs/fase-02/01-modelo-y-brechas.md). La [migración SQL](../database/migrations/20261025204118_align_f02_business_rules_20261025.sql) se aplicó al proyecto Supabase de desarrollo el 25 de octubre de 2026. `usuarios.auth_user_id` referencia externamente `auth.users`. Auth, Storage, checks, índices parciales, privilegios y políticas RLS no son objetos administrados por este archivo.

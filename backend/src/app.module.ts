@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { validateEnv } from "./config/env";
+import { CatalogModule } from "./catalog/catalog.module";
 import { RequestContextMiddleware } from "./common/request-context.middleware";
 import { DatabaseModule } from "./database/database.module";
 import { HealthController } from "./health/health.controller";
@@ -16,6 +17,7 @@ import { OutboxModule } from "./outbox/outbox.module";
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     DatabaseModule,
     IdentityModule,
+    CatalogModule,
     OutboxModule,
   ],
   controllers: [HealthController],

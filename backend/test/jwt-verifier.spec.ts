@@ -9,6 +9,8 @@ describe("verificación JWT de Supabase", () => {
   let verifier: JwtVerifierService;
   let issuer: string;
   let validToken: string;
+  let expiredToken: string;
+  let wrongAudienceToken: string;
 
   beforeAll(async () => {
     const { publicKey, privateKey } = await generateKeyPair("ES256");
@@ -27,6 +29,17 @@ describe("verificación JWT de Supabase", () => {
       .setIssuer(issuer).setAudience("authenticated")
       .setSubject("cd2b9a60-4b5a-40b1-88ad-d1bd73ba7e2a")
       .setExpirationTime("5m").sign(privateKey);
+    expiredToken = await new SignJWT({ role: "authenticated" })
+      .setProtectedHeader({ alg: "ES256", kid: "test-key" })
+      .setIssuer(issuer).setAudience("authenticated")
+      .setSubject("cd2b9a60-4b5a-40b1-88ad-d1bd73ba7e2a")
+      .setIssuedAt(Math.floor(Date.now() / 1000) - 600)
+      .setExpirationTime(Math.floor(Date.now() / 1000) - 300).sign(privateKey);
+    wrongAudienceToken = await new SignJWT({ role: "authenticated" })
+      .setProtectedHeader({ alg: "ES256", kid: "test-key" })
+      .setIssuer(issuer).setAudience("otro-servicio")
+      .setSubject("cd2b9a60-4b5a-40b1-88ad-d1bd73ba7e2a")
+      .setExpirationTime("5m").sign(privateKey);
   });
 
   afterAll(async () => { await new Promise<void>((resolve) => server.close(() => resolve())); });
@@ -39,5 +52,13 @@ describe("verificación JWT de Supabase", () => {
     const parts = validToken.split(".");
     parts[1] = parts[1].slice(0, -1) + (parts[1].at(-1) === "A" ? "B" : "A");
     await expect(verifier.verify(parts.join("."))).rejects.toMatchObject({ status: 401 });
+  });
+
+  it("rechaza un token cuya expiración ya pasó", async () => {
+    await expect(verifier.verify(expiredToken)).rejects.toMatchObject({ status: 401 });
+  });
+
+  it("rechaza un token firmado para otra audiencia", async () => {
+    await expect(verifier.verify(wrongAudienceToken)).rejects.toMatchObject({ status: 401 });
   });
 });

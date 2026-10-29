@@ -50,4 +50,12 @@ describe("API básica", () => {
     const body = await response.json() as { error: { code: string } };
     expect(body.error.code).toBe("UNAUTHORIZED");
   });
+
+  it("limita las solicitudes repetidas a la API", async () => {
+    const statuses: number[] = [];
+    for (let attempt = 0; attempt < 65; attempt++) {
+      statuses.push((await fetch(`${baseUrl}/me`)).status);
+    }
+    expect(statuses).toContain(429);
+  });
 });

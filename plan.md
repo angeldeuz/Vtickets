@@ -228,7 +228,7 @@ La fase 04 depende de la fase 03. Tras el cierre de F02 y F03 el 28 de octubre, 
 
 - [x] F04-T01 — Implementar gestión de categorías y ubicaciones. API pública y administrativa con validación y pruebas; [registro de F04](docs/fase-04/README.md).
 - [x] F04-T02 — Implementar creación, edición, publicación y despublicación de eventos con validación de fechas y estado. API y pruebas listas; la publicación exige un tipo de boleto válido que se podrá crear desde F04-T04.
-- [x] F04-T03 — Integrar carga de imágenes en almacenamiento externo con controles de tipo, tamaño y permisos. Bucket privado, migración de permisos y pruebas de API, PostgreSQL y Storage verificados. El propietario confirmó carga y publicación; la vista previa administrativa quedó disponible para comprobar la imagen visualmente.
+- [x] F04-T03 — Integrar carga de imágenes en almacenamiento externo con controles de tipo, tamaño y permisos. Bucket privado, migración de permisos y pruebas de API, PostgreSQL y Storage verificados. El propietario confirmó la carga, la publicación y la visualización de la imagen desde la vista previa administrativa.
 - [x] F04-T04 — Implementar tipos de boleto, precios, stock, límites y ventanas de venta. API administrativa para borradores, inventario inicial y pruebas de reglas y PostgreSQL; ver [registro de F04](docs/fase-04/README.md).
 - [x] F04-T05 — Impedir cambios de inventario incompatibles con entradas vendidas o reservadas. Ajustes de stock bajo bloqueo de evento e inventario; aforo mínimo y precio publicado protegidos.
 - [x] F04-T06 — Construir el panel administrativo básico y la gestión de personal autorizado por evento. Panel Next.js y API de asignación, retiro y búsqueda de perfiles activos.

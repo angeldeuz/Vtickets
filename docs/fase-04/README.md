@@ -1,6 +1,6 @@
 # Fase 04 — Eventos, inventario y administración
 
-**Estado:** F04-T01 a F04-T07 cerradas para el MVP. El propietario confirmó el recorrido administrativo y la publicación del evento. La vista previa de la imagen quedó disponible en el panel; su comprobación visual no se reportó como terminada.
+**Estado:** F04-T01 a F04-T07 cerradas para el MVP. El propietario confirmó el recorrido administrativo, la publicación del evento y la visualización de la imagen cargada en la vista previa del panel.
 
 ## F04-T01: categorías y ubicaciones
 
@@ -31,7 +31,7 @@
 - La migración [20261031004905_grant_event_images_delete.sql](../../database/migrations/20261031004905_grant_event_images_delete.sql) concede `DELETE` únicamente sobre `tickets_app.evento_imagenes` al rol de la API. Se aplicó al proyecto de desarrollo y quedó registrada en `supabase_migrations.schema_migrations` el 31 de octubre de 2026.
 - En el proyecto de desarrollo, el bucket privado se creó y se verificó con el límite y los MIME esperados. `node scripts/verify-f04-storage.mjs` subió, leyó y eliminó un PNG temporal. La eliminación entre Storage y PostgreSQL no es atómica; la recuperación de fallas se resolverá con tareas durables de operación antes de usar archivos de producción.
 
-**Verificación:** 33 pruebas del backend pasaron, incluidas pruebas HTTP y de servicio para permisos, 5 MiB, MIME falsificado, ruta generada y eliminación. `node scripts/verify-f04-image-grant.mjs` probó el `GRANT` en `Vtickets-pruebas` dentro de una transacción revertida. `node scripts/verify-f04-events.mjs` comprobó `INSERT` y `DELETE` de la referencia de imagen con el rol de la API en desarrollo y revirtió los datos. `node scripts/verify-f04-storage.mjs` subió, leyó y eliminó un PNG temporal de Storage. La ruta sin token respondió `401`. La prueba manual autenticada queda a cargo del propietario.
+**Verificación:** 33 pruebas del backend pasaron, incluidas pruebas HTTP y de servicio para permisos, 5 MiB, MIME falsificado, ruta generada y eliminación. `node scripts/verify-f04-image-grant.mjs` probó el `GRANT` en `Vtickets-pruebas` dentro de una transacción revertida. `node scripts/verify-f04-events.mjs` comprobó `INSERT` y `DELETE` de la referencia de imagen con el rol de la API en desarrollo y revirtió los datos. `node scripts/verify-f04-storage.mjs` subió, leyó y eliminó un PNG temporal de Storage. La ruta sin token respondió `401`. El propietario confirmó la visualización de la imagen cargada en el panel autenticado.
 
 **Vista previa administrativa:** el panel del evento muestra las imágenes cargadas incluso después de publicar. Cada miniatura enlaza a una ruta Next.js que verifica la sesión, solicita la imagen a la API con el token del administrador y responde con caché privada deshabilitada. La cartelera pública continúa como datos de demostración hasta la fase 05; esta vista permite revisar la imagen real sin adelantar esa integración.
 

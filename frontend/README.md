@@ -34,3 +34,9 @@ La carpeta `src/app` define las rutas del App Router. `layout.tsx` contiene la e
 `GET {VTICKETS_API_URL}/public/events` debe devolver un arreglo JSON de eventos publicados. Cada objeto incluye `id`, `slug`, `title`, `category`, `date` (`YYYY-MM-DD`), `time` (`HH:mm`), `venue`, `city`, `description`, `artwork` (una de `coral`, `lime`, `violet`, `blue`, `orange`, `pink`) y `tickets` (arreglo de `{ name, price, available }`). Es un contrato visual provisional: debe revisarse en F02-T06 antes de integrar la API real. La API debe filtrar los eventos no publicados y calcular precios y disponibilidad del lado del servidor.
 
 Al configurar la API, un error de conexión muestra un estado de error; la web nunca sustituye un fallo de API con eventos ficticios. Catálogo vacío, búsqueda sin coincidencias y evento inexistente tienen estados propios.
+
+## Administración de eventos (fase 04)
+
+La ruta `/admin` requiere una sesión de Supabase Auth y un perfil con rol `ADMINISTRADOR` vigente en NestJS. Usa `VTICKETS_API_URL` para conectar el panel con la API. El panel permite crear y editar borradores, categorías y recintos; publicar o suspender eventos; administrar tipos, stock e imágenes; asignar personal de acceso y consultar auditoría. Las mutaciones se envían desde Server Actions con el token de la sesión, y la API vuelve a aplicar los permisos y reglas de negocio.
+
+Las fechas de los formularios administrativos se introducen como instantes ISO con offset, por ejemplo `2030-11-01T18:00:00-06:00`. La carga de imágenes admite 5 MiB en PNG, JPEG o WebP. Para una revisión visual completa del panel se necesita iniciar sesión como administrador en el entorno de desarrollo.

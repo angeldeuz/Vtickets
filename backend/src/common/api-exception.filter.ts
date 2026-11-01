@@ -19,6 +19,8 @@ export class ApiExceptionFilter implements ExceptionFilter {
       : status === 401 ? "UNAUTHORIZED" : status === 403 ? "FORBIDDEN" : status === 404 ? "NOT_FOUND" : status === 429 ? "RATE_LIMITED" : status === 503 ? "UNAVAILABLE" : status >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST";
 
     if (status >= 500) this.logger.error(`Solicitud ${request.requestId ?? "desconocida"}: HTTP ${status}`);
-    response.status(status).json({ error: { code, message, details: {}, requestId: request.requestId ?? "" } });
+    const details = typeof body === "object" && body && "details" in body && body.details && typeof body.details === "object"
+      ? body.details : {};
+    response.status(status).json({ error: { code, message, details, requestId: request.requestId ?? "" } });
   }
 }

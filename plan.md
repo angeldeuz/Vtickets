@@ -127,6 +127,8 @@ El desarrollador está comenzando con Next.js y NestJS. Las primeras implementac
 
 ## 2. Reglas fundamentales
 
+**Regla para todos los formularios actuales y futuros:** usar controles acordes al dato (selectores de fecha y hora, entradas numéricas con límites y opciones cuando exista un conjunto conocido). Validar en cliente para dar respuesta inmediata y mantener la validación del backend como autoridad. Si falla el envío, conservar todos los valores y archivos seleccionados, mostrar un mensaje claro, marcar en rojo los campos incorrectos con `aria-invalid` y explicación junto al campo, y llevar el foco al primer error. No redirigir ni reconstruir el formulario ante un error; limpiar valores solo después de guardar con éxito. Aplicar también a formularios de edición, autenticación y nuevas fases.
+
 - El backend valida precios, disponibilidad, límites, permisos, estados de pago y validez del ticket.
 - La reserva protege inventario durante un tiempo limitado; su creación y liberación deben resistir operaciones concurrentes.
 - Los importes de una compra se conservan aunque cambien posteriormente los precios del catálogo.
@@ -225,12 +227,16 @@ La fase 04 depende de la fase 03. Tras el cierre de F02 y F03 el 28 de octubre, 
 **Dependencias:** fase 03.
 
 - [x] F04-T01 — Implementar gestión de categorías y ubicaciones. API pública y administrativa con validación y pruebas; [registro de F04](docs/fase-04/README.md).
-- [ ] F04-T02 — Implementar creación, edición, publicación y despublicación de eventos con validación de fechas y estado.
-- [ ] F04-T03 — Integrar carga de imágenes en almacenamiento externo con controles de tipo, tamaño y permisos.
-- [ ] F04-T04 — Implementar tipos de boleto, precios, stock, límites y ventanas de venta.
-- [ ] F04-T05 — Impedir cambios de inventario incompatibles con entradas vendidas o reservadas.
-- [ ] F04-T06 — Construir el panel administrativo básico y la gestión de personal autorizado por evento.
-- [ ] F04-T07 — Registrar auditoría de cambios administrativos relevantes.
+- [x] F04-T02 — Implementar creación, edición, publicación y despublicación de eventos con validación de fechas y estado. API y pruebas listas; la publicación exige un tipo de boleto válido que se podrá crear desde F04-T04.
+- [x] F04-T03 — Integrar carga de imágenes en almacenamiento externo con controles de tipo, tamaño y permisos. Bucket privado, migración de permisos y pruebas de API, PostgreSQL y Storage verificados. El propietario confirmó la carga, la publicación y la visualización de la imagen desde la vista previa administrativa.
+- [x] F04-T04 — Implementar tipos de boleto, precios, stock, límites y ventanas de venta. API administrativa para borradores, inventario inicial y pruebas de reglas y PostgreSQL; ver [registro de F04](docs/fase-04/README.md).
+- [x] F04-T05 — Impedir cambios de inventario incompatibles con entradas vendidas o reservadas. Ajustes de stock bajo bloqueo de evento e inventario; aforo mínimo y precio publicado protegidos.
+- [x] F04-T06 — Construir el panel administrativo básico y la gestión de personal autorizado por evento. Panel Next.js y API de asignación, retiro y búsqueda de perfiles activos.
+- [x] F04-T07 — Registrar auditoría de cambios administrativos relevantes. Actor y metadatos limitados para catálogo, eventos, tipos, imágenes y personal; consulta paginada para administradores.
+
+**Mejora de uso de F04 — 31 de octubre de 2026:** la revisión visual general continúa en F11-T01, pero los problemas observados al probar F04 se corrigen aquí: edición de boletos con campos amplios y vista resumida, nombres legibles en personal, nombre editable en «Mi cuenta» para perfiles sin completar y auditoría en lenguaje natural sin JSON ni identificadores como texto principal. Para futuras pantallas administrativas, mostrar nombres y datos de negocio; reservar IDs para enlaces, soporte técnico y API.
+
+**Recordatorio posterior al MVP, fuera del cierre de F04:** estudiar la edición controlada después de publicar: correcciones descriptivas e imágenes, y alta de nuevos tipos de boleto sin alterar precio ni condiciones existentes. Antes de permitir cambios de fecha, recinto o capacidad con reservas o ventas, definir avisos, inventario y reembolsos. Auditar y probar concurrencia. No bloquea la fase 05.
 
 **Entregables:** administración funcional de eventos e inventario.
 

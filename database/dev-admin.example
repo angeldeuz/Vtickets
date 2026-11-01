@@ -1,0 +1,4 @@
+# Copiar a database/.env.desarrollo (ignorado por Git). No compartir esta URL por chat.
+# En el proyecto Supabase de DESARROLLO: Dashboard > Connect > Direct connection.
+# Si no hay IPv6, usar Session pooler en puerto 5432; no Transaction pooler (6543).
+DEV_ADMIN_DATABASE_URL=

@@ -14,6 +14,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const configured = Boolean(supabaseConfig());
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -24,11 +25,17 @@ export function AuthForm({ mode }: { mode: Mode }) {
     const data = new FormData(event.currentTarget);
     const email = String(data.get("email") ?? "").trim();
     const password = String(data.get("password") ?? "");
+    const next: Record<string, string> = {};
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) next.email = "Escribe un correo electrónico válido.";
+    if (mode !== "recovery" && !password) next.password = "Escribe tu contraseña.";
+    else if (mode === "signup" && password.length < 12) next.password = "Usa al menos 12 caracteres.";
+    if (Object.keys(next).length) { setErrors(next); setMessage("Revisa los campos marcados."); requestAnimationFrame(() => document.getElementById(`auth-${Object.keys(next)[0]}`)?.focus()); setBusy(false); return; }
+    setErrors({});
     const supabase = createClient();
     try {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) { setMessage("No pudimos iniciar sesión. Revisa tus datos e inténtalo otra vez."); return; }
+        if (error) { setErrors({ password: "Revisa el correo y la contraseña." }); setMessage("No pudimos iniciar sesión. Revisa tus datos e inténtalo otra vez."); requestAnimationFrame(() => document.getElementById("auth-password")?.focus()); return; }
         router.push("/cuenta");
         router.refresh();
       } else if (mode === "signup") {
@@ -36,7 +43,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
           email, password,
           options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
         });
-        if (error) { setMessage("No pudimos crear la cuenta. Revisa los datos o inténtalo más tarde."); return; }
+        if (error) { setErrors(error.code === "weak_password" ? { password: "Elige una contraseña más segura." } : error.code === "email_address_invalid" ? { email: "Revisa el correo electrónico." } : {}); setMessage("No pudimos crear la cuenta. Revisa los datos o inténtalo más tarde."); return; }
         if (result.session) { router.push("/cuenta"); router.refresh(); }
         else setMessage("Solicitud recibida. Si ya tenías cuenta, entra con tu contraseña anterior o usa «Olvidé mi contraseña». Si es nueva, revisa el correo de confirmación.");
       } else {
@@ -60,12 +67,14 @@ export function AuthForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <form className="auth-form" onSubmit={submit}>
+    <form className="auth-form" onSubmit={submit} noValidate>
       <label htmlFor="auth-email">Correo electrónico</label>
-      <input id="auth-email" name="email" type="email" autoComplete="email" required maxLength={254} />
+      <input id="auth-email" name="email" type="email" autoComplete="email" required maxLength={254} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "auth-email-error" : undefined} onChange={() => setErrors((current) => ({ ...current, email: "" }))} />
+      {errors.email && <span id="auth-email-error" className="auth-field-error">{errors.email}</span>}
       {mode !== "recovery" ? <>
         <label htmlFor="auth-password">Contraseña</label>
-        <input id="auth-password" name="password" type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} required minLength={mode === "signup" ? 12 : undefined} />
+        <input id="auth-password" name="password" type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} required minLength={mode === "signup" ? 12 : undefined} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? "auth-password-error" : undefined} onChange={() => setErrors((current) => ({ ...current, password: "" }))} />
+        {errors.password && <span id="auth-password-error" className="auth-field-error">{errors.password}</span>}
       </> : null}
       {mode === "signup" ? <p className="form-help">Usa al menos 12 caracteres. Revisa tu correo para confirmar la cuenta si Supabase lo solicita.</p> : null}
       {!configured ? <p className="form-message" role="status">El acceso estará disponible al configurar Supabase Auth.</p> : null}

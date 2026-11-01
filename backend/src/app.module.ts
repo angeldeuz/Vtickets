@@ -6,6 +6,7 @@ import { validateEnv } from "./config/env";
 import { CatalogModule } from "./catalog/catalog.module";
 import { RequestContextMiddleware } from "./common/request-context.middleware";
 import { DatabaseModule } from "./database/database.module";
+import { EventsModule } from "./events/events.module";
 import { HealthController } from "./health/health.controller";
 import { IdentityModule } from "./identity/identity.module";
 import { OutboxModule } from "./outbox/outbox.module";
@@ -18,6 +19,7 @@ import { OutboxModule } from "./outbox/outbox.module";
     DatabaseModule,
     IdentityModule,
     CatalogModule,
+    EventsModule,
     OutboxModule,
   ],
   controllers: [HealthController],

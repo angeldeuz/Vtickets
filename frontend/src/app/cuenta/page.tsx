@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArrowUpRight, LockKeyhole, LayoutDashboard } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
+import { ProfileNameForm } from "@/components/profile-name-form";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Mi cuenta" };
@@ -34,8 +36,23 @@ export default async function AccountPage() {
         <div><dt>Teléfono</dt><dd>{profile.phone || "Sin registrar"}</dd></div>
         <div><dt>Roles</dt><dd>{profile.roles.join(", ")}</dd></div>
       </dl> : <p>Tu sesión está activa. El perfil de negocio aparecerá cuando la API y la base de datos estén disponibles.</p>}
-      <Link className="text-link" href="/actualizar-contrasena">Cambiar contraseña</Link>
-      <LogoutButton />
+      {profile && <ProfileNameForm name={profile.fullName} />}
     </div>
+    <section className="account-controls" aria-labelledby="account-controls-title">
+      <h2 id="account-controls-title">Accesos y seguridad</h2>
+      <div className="account-actions">
+        {profile?.roles.includes("ADMINISTRADOR") && <Link className="account-action" href="/admin">
+          <span className="account-action-icon" aria-hidden="true"><LayoutDashboard size={21} /></span>
+          <span className="account-action-copy"><strong>Panel de administración</strong><small>Eventos, boletos y personal</small></span>
+          <ArrowUpRight className="account-action-arrow" size={19} aria-hidden="true" />
+        </Link>}
+        <Link className="account-action" href="/actualizar-contrasena">
+          <span className="account-action-icon" aria-hidden="true"><LockKeyhole size={21} /></span>
+          <span className="account-action-copy"><strong>Cambiar contraseña</strong><small>Actualiza tus datos de acceso</small></span>
+          <ArrowUpRight className="account-action-arrow" size={19} aria-hidden="true" />
+        </Link>
+      </div>
+      <div className="account-signout"><LogoutButton /></div>
+    </section>
   </div></section>;
 }

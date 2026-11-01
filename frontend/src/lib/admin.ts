@@ -1,6 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { collectPages } from "./paginated-list";
 
 const base = process.env.VTICKETS_API_URL || "http://127.0.0.1:3001/api/v1";
 
@@ -15,6 +16,13 @@ export type AdminStaff = { id: string; userId: string; status: string; startsAt:
   refUserId: { fullName: string | null; phone: string | null } };
 export type AdminImage = { id: string; altText: string | null; isCover: boolean; sortOrder: number };
 export type Page<T> = { items: T[]; nextCursor: string | null };
+
+export async function adminFetchAll<T>(path: string): Promise<T[]> {
+  return collectPages((cursor) => {
+    const query = `limit=100${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`;
+    return adminFetch<Page<T>>(`${path}${path.includes("?") ? "&" : "?"}${query}`);
+  });
+}
 
 export class AdminApiError extends Error {
   constructor(message: string, public readonly status: number, public readonly fields: Record<string, string> = {}) {

@@ -65,4 +65,29 @@ describe("reglas de tipos de boleto F04-T04", () => {
       .resolves.toMatchObject({ priceCents: 25000 });
     expect(stock).toBe(1);
   });
+
+  it("registra valores anteriores y nuevos de todos los campos editables", async () => {
+    const before = { ...current, description: "Acceso general", maxPerOrder: 4, maxPerUser: 4,
+      status: "active", salesStartsAt: null, salesEndsAt: null };
+    const after = { ...before, name: "Preferente", description: "Acceso preferente", maxPerOrder: 2,
+      salesStartsAt: new Date("2030-10-01T10:00:00Z") };
+    const audits: Array<{ data: { metadata: { before: Record<string, unknown>; after: Record<string, unknown> } } }> = [];
+    let reads = 0;
+    const tx = {
+      $queryRaw: async () => [{ id }],
+      evento: { findUniqueOrThrow: async () => ({ status: "draft", startsAt: start, salesStartsAt: null, salesEndsAt: null, capacityLimit: 100 }) },
+      tipoTicket: {
+        findUnique: async () => ({ eventId: id }),
+        findUniqueOrThrow: async () => ++reads === 1 ? before : after,
+        updateMany: async () => ({ count: 1 }),
+      },
+      auditoria: { create: async (entry: (typeof audits)[number]) => { audits.push(entry); } },
+    };
+    const audited = new TicketTypesService({ client: { $transaction: async (fn: (value: typeof tx) => Promise<unknown>) => fn(tx) } } as unknown as PrismaService);
+    await audited.update(id, { name: "Preferente", description: "Acceso preferente", maxPerOrder: 2,
+      salesStartsAt: "2030-10-01T10:00:00Z", updatedAt: before.updatedAt.toISOString() }, id);
+    expect(audits[0].data.metadata.before).toMatchObject({ name: "General", description: "Acceso general", maxPerOrder: 4, salesStartsAt: null });
+    expect(audits[0].data.metadata.after).toMatchObject({ name: "Preferente", description: "Acceso preferente", maxPerOrder: 2,
+      salesStartsAt: "2030-10-01T10:00:00.000Z" });
+  });
 });

@@ -7,7 +7,7 @@
     "dev:api": "pnpm --filter @vtickets/backend dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter @vtickets/backend test",
+    "test": "pnpm --filter @vtickets/backend test && pnpm --filter @vtickets/frontend test",
     "db:verify-f02": "pnpm --filter @vtickets/backend db:verify-f02"
   }
 }

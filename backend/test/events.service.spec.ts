@@ -16,11 +16,12 @@ describe("reglas de eventos F04-T02", () => {
   let writes: number;
   let audits: unknown[];
   let service: EventsService;
+  let onLock: (() => void) | null;
 
   beforeEach(() => {
-    writes = 0; audits = []; event.status = "draft"; event.fromTipoTicketEventId = [];
+    writes = 0; audits = []; onLock = null; event.status = "draft"; event.fromTipoTicketEventId = [];
     const tx = {
-      $queryRaw: async () => [{ id }],
+      $queryRaw: async () => { onLock?.(); return [{ id }]; },
       tipoTicket: { aggregate: async () => ({ _sum: { quantityTotal: 80 } }) },
       evento: {
         findUnique: async () => event,
@@ -62,6 +63,17 @@ describe("reglas de eventos F04-T02", () => {
     await expect(service.update(id, { title: "Nuevo", updatedAt: now.toISOString() })).rejects.toMatchObject({
       status: 409, response: { code: "EVENT_CHANGED" },
     });
+  });
+
+  it("vuelve a leer los boletos después del bloqueo antes de publicar o reanudar", async () => {
+    for (const status of ["draft", "suspended"]) {
+      event.status = status;
+      event.fromTipoTicketEventId = [{ status: "active", quantityTotal: 10, salesStartsAt: null, salesEndsAt: null }];
+      onLock = () => { event.fromTipoTicketEventId[0].status = "paused"; };
+      const result = status === "draft" ? service.publish(id) : service.resume(id);
+      await expect(result).rejects.toMatchObject({ status: 400, response: { code: "INVALID_EVENT" } });
+      expect(writes).toBe(0);
+    }
   });
 
   it("suspende desde publicado y registra el motivo en la misma transacción", async () => {

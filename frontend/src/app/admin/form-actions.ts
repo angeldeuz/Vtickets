@@ -5,7 +5,8 @@ import { adminFetch, AdminApiError, type AdminEvent } from "@/lib/admin";
 import { localDateWithOffset } from "@/lib/event-local-date";
 
 export type AdminFormOperation = "createCategory" | "updateCategory" | "createVenue" | "updateVenue" |
-  "updateEvent" | "createTicket" | "updateTicket" | "uploadImage" | "assignStaff" | "suspendEvent";
+  "updateEvent" | "createTicket" | "updateTicket" | "uploadImage" | "assignStaff" | "suspendEvent" |
+  "publishEvent" | "resumeEvent" | "changeStaff" | "deleteImage";
 type Outcome = { ok: true; message: string; id?: string } | { ok: false; message: string; fields: Record<string, string> };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const get = (form: FormData, name: string) => String(form.get(name) ?? "").trim();
@@ -63,7 +64,7 @@ function apiFailure(error: unknown, operation: AdminFormOperation): Outcome {
 export async function saveAdminForm(operation: AdminFormOperation, form: FormData): Promise<Outcome> {
   const fields: Record<string, string> = {};
   const eventId = get(form, "eventId");
-  if (["updateEvent", "createTicket", "updateTicket", "uploadImage", "assignStaff", "suspendEvent"].includes(operation) && !uuid.test(eventId))
+  if (["updateEvent", "createTicket", "updateTicket", "uploadImage", "assignStaff", "suspendEvent", "publishEvent", "resumeEvent", "changeStaff", "deleteImage"].includes(operation) && !uuid.test(eventId))
     return { ok: false, message: "Identificador de evento no válido.", fields: {} };
   let path = "/admin/catalogo";
   let success = "Cambios guardados.";
@@ -181,9 +182,37 @@ export async function saveAdminForm(operation: AdminFormOperation, form: FormDat
         await adminFetch(`/admin/events/${eventId}/suspend`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reason }) });
         success = "Evento suspendido."; break;
       }
+      case "publishEvent":
+      case "resumeEvent": {
+        path = `/admin/eventos/${eventId}`;
+        const action = operation === "publishEvent" ? "publish" : "resume";
+        await adminFetch(`/admin/events/${eventId}/${action}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+        success = operation === "publishEvent" ? "Evento publicado." : "Ventas reanudadas."; break;
+      }
+      case "changeStaff": {
+        path = `/admin/eventos/${eventId}`;
+        const assignmentId = get(form, "assignmentId"), status = get(form, "status");
+        if (!uuid.test(assignmentId) || !["assigned", "withdrawn"].includes(status)) {
+          fields.actionButton = "La asignación no es válida. Actualiza la página e inténtalo de nuevo."; break;
+        }
+        await adminFetch(`/admin/events/${eventId}/staff/${assignmentId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+        success = status === "withdrawn" ? "Personal retirado." : "Personal reactivado."; break;
+      }
+      case "deleteImage": {
+        path = `/admin/eventos/${eventId}`;
+        const imageId = get(form, "imageId");
+        if (!uuid.test(imageId)) { fields.actionButton = "La imagen no es válida. Actualiza la página e inténtalo de nuevo."; break; }
+        await adminFetch(`/admin/events/${eventId}/images/${imageId}`, { method: "DELETE" });
+        success = "Imagen eliminada."; break;
+      }
       default: return { ok: false, message: "Operación desconocida.", fields: {} };
     }
-  } catch (error) { return apiFailure(error, operation); }
+  } catch (error) {
+    const failure = apiFailure(error, operation);
+    if (["publishEvent", "resumeEvent", "changeStaff", "deleteImage"].includes(operation))
+      return { ok: false, message: failure.message, fields: { actionButton: failure.message } };
+    return failure;
+  }
   if (Object.keys(fields).length) return { ok: false, message: "Revisa los campos marcados.", fields };
   revalidatePath(path); revalidatePath("/admin");
   return { ok: true, message: success };

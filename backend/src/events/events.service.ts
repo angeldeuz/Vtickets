@@ -150,6 +150,10 @@ export class EventsService {
 
   private async transition(id: string, from: string, to: string, checkReadiness: boolean, audit?: { reason?: string; actorUserId?: string }) {
     return this.database.client.$transaction(async (tx) => {
+      // Todas las mutaciones de boletos bloquean primero el evento. Leer la preparación
+      // después de este bloqueo evita publicar con un estado de boletos ya obsoleto.
+      const locked = await tx.$queryRaw<Array<{ id: string }>>`SELECT id FROM tickets_app.eventos WHERE id = ${id}::uuid FOR UPDATE`;
+      if (!locked.length) throw new NotFoundException("Evento no encontrado");
       const event = await tx.evento.findUnique({
         where: { id },
         include: { refCategoryId: true, refVenueId: true, fromTipoTicketEventId: true },

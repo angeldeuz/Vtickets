@@ -21,6 +21,13 @@ function response<T extends { priceCents: bigint; fromInventarioTicketTypeId?: {
   const { fromInventarioTicketTypeId, ...rest } = row;
   return { ...rest, priceCents: Number(row.priceCents), inventory: fromInventarioTicketTypeId ?? null };
 }
+function auditTicket(value: { name: string; description: string | null; priceCents: bigint; quantityTotal: number;
+  maxPerOrder: number; maxPerUser: number; status: string; salesStartsAt: Date | null; salesEndsAt: Date | null }) {
+  return { name: value.name, description: value.description, priceCents: Number(value.priceCents),
+    quantityTotal: value.quantityTotal, maxPerOrder: value.maxPerOrder, maxPerUser: value.maxPerUser,
+    status: value.status, salesStartsAt: value.salesStartsAt?.toISOString() ?? null,
+    salesEndsAt: value.salesEndsAt?.toISOString() ?? null };
+}
 
 // Bloquear el evento serializa cambios de tipos y permite comprobar la capacidad total.
 // La misma transacción crea tipo e inventario: nunca queda un tipo sin contador.
@@ -99,10 +106,10 @@ export class TicketTypesService {
             updatedAt: new Date(Math.max(Date.now(), current.updatedAt.getTime() + 1)) },
         });
         if (changed.count !== 1) conflict();
+        const updated = await tx.tipoTicket.findUniqueOrThrow({ where: { id }, include: { fromInventarioTicketTypeId: true } });
         if (actorUserId) await tx.auditoria.create({ data: { actorUserId, action: "ticket_type.updated", entityName: "tipo_ticket", entityId: id,
-          metadata: { eventId: lookup.eventId, changedFields: Object.keys(changes), before: { priceCents: Number(current.priceCents), quantityTotal: current.quantityTotal, status: current.status },
-            after: { priceCents: changes.priceCents ?? Number(current.priceCents), quantityTotal: changes.quantityTotal ?? current.quantityTotal, status: changes.status ?? current.status } } } });
-        return response(await tx.tipoTicket.findUniqueOrThrow({ where: { id }, include: { fromInventarioTicketTypeId: true } }));
+          metadata: { eventId: lookup.eventId, changedFields: Object.keys(changes), before: auditTicket(current), after: auditTicket(updated) } } });
+        return response(updated);
       });
     } catch (error) {
       if (errorCode(error) === "P2002") throw new ConflictException({ code: "TICKET_TYPE_NAME_EXISTS", message: "Ya existe un tipo con ese nombre en el evento" });

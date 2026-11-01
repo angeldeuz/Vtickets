@@ -27,7 +27,9 @@ export function AdminForm({ operation, children, className, successPath }: Props
       input.setAttribute("aria-describedby", id);
       const note = document.createElement("span");
       note.id = id; note.className = "admin-field-error"; note.textContent = error;
-      input.closest("label")?.append(note);
+      const label = input.closest("label");
+      if (label) label.append(note);
+      else input.insertAdjacentElement("afterend", note);
     }
     const first = Object.keys(errors)[0];
     if (first) (root.elements.namedItem(first) as HTMLElement | null)?.focus();

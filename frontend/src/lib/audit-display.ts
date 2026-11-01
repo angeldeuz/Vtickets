@@ -45,8 +45,10 @@ export function describeAudit(row: AuditRow) {
   const title = row.action === "event.published" && metadata.from === "suspended" ? "Se reanudó un evento" :
     actionLabels[row.action] ?? `${entityLabels[row.entityName] ?? "Registro"}: cambio registrado`;
   const subject = row.subjectName ?? (row.entityName === "personal_evento" ? "Cuenta sin nombre" : null);
-  const label = row.entityName === "personal_evento" ? subject : row.entityName === "tipo_ticket" ? row.ticketName ?? (typeof metadata.name === "string" ? metadata.name : "Tipo de boleto") :
-    row.entityName === "evento" || row.entityName === "evento_imagen" ? row.eventTitle ?? (typeof metadata.title === "string" ? metadata.title : "Evento") :
+  const historicalTitle = typeof metadata.title === "string" ? metadata.title : typeof after.title === "string" ? after.title : typeof before.title === "string" ? before.title : null;
+  const historicalTicketName = typeof metadata.name === "string" ? metadata.name : typeof after.name === "string" ? after.name : typeof before.name === "string" ? before.name : null;
+  const label = row.entityName === "personal_evento" ? subject : row.entityName === "tipo_ticket" ? historicalTicketName ?? row.ticketName ?? "Tipo de boleto" :
+    row.entityName === "evento" || row.entityName === "evento_imagen" ? historicalTitle ?? row.eventTitle ?? "Evento" :
     typeof after.name === "string" ? after.name : typeof before.name === "string" ? before.name : entityLabels[row.entityName] ?? "Registro";
   const facts: Array<{ label: string; text: string }> = [];
   const add = (label: string, text: string) => { if (text) facts.push({ label, text }); };

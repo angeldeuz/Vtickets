@@ -1,4 +1,4 @@
-import { adminFetch, type Page } from "@/lib/admin";
+import { adminFetchAll } from "@/lib/admin";
 import { AdminForm } from "@/components/admin-form";
 
 type Category = { id: string; name: string; slug: string; isActive: boolean };
@@ -7,14 +7,14 @@ type Venue = { id: string; name: string; city: string | null; capacity: number |
 export default async function CatalogAdminPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
   const query = await searchParams;
   const [categories, venues] = await Promise.all([
-    adminFetch<Page<Category>>("/admin/categories?limit=100"), adminFetch<Page<Venue>>("/admin/venues?limit=100"),
+    adminFetchAll<Category>("/admin/categories"), adminFetchAll<Venue>("/admin/venues"),
   ]);
   return <section className="admin-page"><div className="admin-heading"><div><h1>Catálogo base</h1>
     <p>Prepara categorías y recintos antes de crear un evento.</p></div></div>
     {query.ok && <p className="admin-feedback" role="status">{query.ok}</p>}
     {query.error && <p className="admin-feedback admin-feedback-error" role="alert">{query.error}</p>}
     <div className="admin-columns"><section className="admin-panel"><h2>Categorías</h2>
-      <div className="admin-catalog-list">{categories.items.map((item) => <AdminForm operation="updateCategory" className="admin-catalog-row" key={item.id}>
+      <div className="admin-catalog-list">{categories.map((item) => <AdminForm operation="updateCategory" className="admin-catalog-row" key={item.id}>
         <input type="hidden" name="categoryId" value={item.id} />
         <label>Nombre<input name="name" defaultValue={item.name} required /></label>
         <label>Estado<select name="isActive" defaultValue={String(item.isActive)}><option value="true">Activa</option><option value="false">Inactiva</option></select></label>
@@ -27,7 +27,7 @@ export default async function CatalogAdminPage({ searchParams }: { searchParams:
         <button className="admin-button">Guardar categoría</button>
       </AdminForm></section>
       <section className="admin-panel"><h2>Recintos</h2>
-        <div className="admin-catalog-list">{venues.items.map((item) => <AdminForm operation="updateVenue" className="admin-catalog-row" key={item.id}>
+        <div className="admin-catalog-list">{venues.map((item) => <AdminForm operation="updateVenue" className="admin-catalog-row" key={item.id}>
           <input type="hidden" name="venueId" value={item.id} /><label>Nombre<input name="name" defaultValue={item.name} required /></label>
           <label>Ciudad<input name="city" defaultValue={item.city ?? ""} /></label>
           <label>Capacidad<input name="capacity" type="number" min={1} defaultValue={item.capacity ?? ""} /></label>

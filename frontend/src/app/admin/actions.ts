@@ -1,14 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { adminFetch, AdminApiError, type AdminEvent } from "@/lib/admin";
 import { localDateWithOffset } from "@/lib/event-local-date";
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const value = (form: FormData, key: string) => String(form.get(key) ?? "").trim();
 const optional = (form: FormData, key: string) => value(form, key) || null;
-const resultPath = (id?: string) => id ? `/admin/eventos/${id}` : "/admin";
 // El slug es la parte legible de la URL. La forma elimina acentos y separa palabras con guiones.
 function slug(input: string, fallback: string, max: number) {
   const normalized = (input || fallback).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -17,15 +15,6 @@ function slug(input: string, fallback: string, max: number) {
     throw new Error(`La dirección corta debe tener entre 2 y ${max} letras o números. Puedes dejarla vacía para generarla desde el nombre.`);
   }
   return normalized;
-}
-function id(value: string) { if (!uuid.test(value)) throw new Error("Identificador no válido"); return value; }
-function notice(path: string, kind: "ok" | "error", message: string): never {
-  redirect(`${path}?${kind}=${encodeURIComponent(message)}`);
-}
-async function run(path: string, success: string, operation: () => Promise<void>): Promise<never> {
-  try { await operation(); revalidatePath("/admin"); revalidatePath(path); }
-  catch (error) { notice(path, "error", error instanceof Error ? error.message : "No se pudo guardar el cambio"); }
-  notice(path, "ok", success);
 }
 
 export type CreateEventResult = { ok: false; message: string; fields: Record<string, string> } | { ok: true; id: string };
@@ -84,26 +73,4 @@ export async function createEvent(form: FormData): Promise<CreateEventResult> {
     }
     return { ok: false, message, fields: apiFields };
   }
-}
-export async function transitionEvent(form: FormData) {
-  const eventId = id(value(form, "eventId"));
-  const action = value(form, "action");
-  if (!["publish", "suspend", "resume"].includes(action)) notice(resultPath(eventId), "error", "Acción no válida");
-  return run(resultPath(eventId), "Estado del evento actualizado", async () => {
-    await adminFetch(`/admin/events/${eventId}/${action}`, { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(action === "suspend" ? { reason: value(form, "reason") } : {}) });
-  });
-}
-export async function changeStaff(form: FormData) {
-  const eventId = id(value(form, "eventId")), assignmentId = id(value(form, "assignmentId"));
-  return run(resultPath(eventId), "Asignación actualizada", async () => {
-    await adminFetch(`/admin/events/${eventId}/staff/${assignmentId}`, { method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: value(form, "status") }) });
-  });
-}
-export async function deleteImage(form: FormData) {
-  const eventId = id(value(form, "eventId")), imageId = id(value(form, "imageId"));
-  return run(resultPath(eventId), "Imagen eliminada", async () => {
-    await adminFetch(`/admin/events/${eventId}/images/${imageId}`, { method: "DELETE" });
-  });
 }

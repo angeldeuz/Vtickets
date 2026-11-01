@@ -390,6 +390,8 @@ p { text-wrap: pretty; }
 .admin-form textarea { resize: vertical; }
 .admin-form input[type=file] { padding: 8px; }
 .admin-form :is(input, select, textarea)[aria-invalid="true"] { border-color: #b4352b; background: #fff6f4; box-shadow: 0 0 0 2px #b4352b20; }
+.admin-action-form { display: grid; justify-items: start; gap: 6px; }
+.admin-action-form button[aria-invalid="true"] { outline: 2px solid #b4352b; outline-offset: 2px; }
 .admin-inline-form :is(input, select, textarea)[aria-invalid="true"], .admin-catalog-row :is(input, select, textarea)[aria-invalid="true"] { border-color: #b4352b; background: #fff6f4; box-shadow: 0 0 0 2px #b4352b20; }
 .admin-form :is(input, select, textarea):focus-visible { outline: 2px solid var(--coral-text); outline-offset: 2px; }
 .admin-field-error { color: #a72d24; font-size: 13px; font-weight: 600; line-height: 1.35; }

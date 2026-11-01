@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export function LogoutButton() {
@@ -26,8 +27,10 @@ export function LogoutButton() {
     }
   }
   return <>
-    <button className="button button-dark" type="button" onClick={signOut} disabled={busy}>
-      {busy ? "Cerrando sesión…" : "Cerrar sesión"}
+    <button className="account-action account-signout-button" type="button" onClick={signOut} disabled={busy}>
+      <span className="account-action-icon" aria-hidden="true"><LogOut size={21} /></span>
+      <span className="account-action-copy"><strong>{busy ? "Cerrando sesión…" : "Cerrar sesión"}</strong>
+        <small>Salir de esta cuenta en este dispositivo</small></span>
     </button>
     {message ? <p className="form-message" role="alert">{message}</p> : null}
   </>;

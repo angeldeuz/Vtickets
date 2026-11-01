@@ -31,18 +31,31 @@ export class CatalogService {
     return { items: rows.slice(0, options.limit), nextCursor: rows.length > options.limit ? rows[options.limit - 1].id : null };
   }
 
-  async createCategory(data: CategoryCreate) {
+  async createCategory(data: CategoryCreate, actorUserId: string) {
     try {
-      return await this.database.client.categoria.create({ data });
+      return await this.database.client.$transaction(async (tx) => {
+        const row = await tx.categoria.create({ data });
+        await tx.auditoria.create({ data: { actorUserId, action: "category.created", entityName: "categoria", entityId: row.id,
+          metadata: { after: { name: row.name, slug: row.slug, isActive: row.isActive } } } });
+        return row;
+      });
     } catch (error) {
       if (databaseErrorCode(error) === "P2002") throw new ConflictException({ code: "CATEGORY_SLUG_EXISTS", message: "El slug ya está en uso" });
       throw error;
     }
   }
 
-  async updateCategory(id: string, data: CategoryUpdate) {
+  async updateCategory(id: string, data: CategoryUpdate, actorUserId: string) {
     try {
-      return await this.database.client.categoria.update({ where: { id }, data: { ...data, updatedAt: new Date() } });
+      return await this.database.client.$transaction(async (tx) => {
+        const before = await tx.categoria.findUnique({ where: { id } });
+        if (!before) throw new NotFoundException("Categoría no encontrada");
+        const row = await tx.categoria.update({ where: { id }, data: { ...data, updatedAt: new Date() } });
+        await tx.auditoria.create({ data: { actorUserId, action: "category.updated", entityName: "categoria", entityId: id,
+          metadata: { changedFields: Object.keys(data), before: { name: before.name, slug: before.slug, isActive: before.isActive },
+            after: { name: row.name, slug: row.slug, isActive: row.isActive } } } });
+        return row;
+      });
     } catch (error) {
       if (databaseErrorCode(error) === "P2025") throw new NotFoundException("Categoría no encontrada");
       if (databaseErrorCode(error) === "P2002") throw new ConflictException({ code: "CATEGORY_SLUG_EXISTS", message: "El slug ya está en uso" });
@@ -62,13 +75,26 @@ export class CatalogService {
     return { items: rows.slice(0, options.limit), nextCursor: rows.length > options.limit ? rows[options.limit - 1].id : null };
   }
 
-  createVenue(data: VenueCreate) {
-    return this.database.client.ubicacion.create({ data });
+  createVenue(data: VenueCreate, actorUserId: string) {
+    return this.database.client.$transaction(async (tx) => {
+      const row = await tx.ubicacion.create({ data });
+      await tx.auditoria.create({ data: { actorUserId, action: "venue.created", entityName: "ubicacion", entityId: row.id,
+        metadata: { after: { name: row.name, city: row.city, capacity: row.capacity } } } });
+      return row;
+    });
   }
 
-  async updateVenue(id: string, data: VenueUpdate) {
+  async updateVenue(id: string, data: VenueUpdate, actorUserId: string) {
     try {
-      return await this.database.client.ubicacion.update({ where: { id }, data: { ...data, updatedAt: new Date() } });
+      return await this.database.client.$transaction(async (tx) => {
+        const before = await tx.ubicacion.findUnique({ where: { id } });
+        if (!before) throw new NotFoundException("Ubicación no encontrada");
+        const row = await tx.ubicacion.update({ where: { id }, data: { ...data, updatedAt: new Date() } });
+        await tx.auditoria.create({ data: { actorUserId, action: "venue.updated", entityName: "ubicacion", entityId: id,
+          metadata: { changedFields: Object.keys(data), before: { name: before.name, city: before.city, capacity: before.capacity },
+            after: { name: row.name, city: row.city, capacity: row.capacity } } } });
+        return row;
+      });
     } catch (error) {
       if (databaseErrorCode(error) === "P2025") throw new NotFoundException("Ubicación no encontrada");
       throw error;

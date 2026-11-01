@@ -6,6 +6,7 @@ const envSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   WEB_ORIGIN: z.url().default("http://localhost:3000"),
   SUPABASE_URL: z.union([z.url(), z.literal("")]).default(""),
+  SUPABASE_SECRET_KEY: z.union([z.string().startsWith("sb_secret_"), z.literal("")]).default(""),
   DATABASE_URL: z.union([z.url(), z.literal("")]).default(""),
   DB_POOL_MAX: z.coerce.number().int().min(1).max(20).default(5),
 });

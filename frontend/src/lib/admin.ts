@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { collectPages } from "./paginated-list";
@@ -31,7 +32,7 @@ export class AdminApiError extends Error {
   }
 }
 
-async function token() {
+const token = cache(async () => {
   const supabase = await createClient();
   if (!supabase) redirect("/ingresar");
   const claims = await supabase.auth.getClaims();
@@ -39,7 +40,7 @@ async function token() {
   const session = await supabase.auth.getSession();
   if (!session.data.session?.access_token) redirect("/ingresar");
   return session.data.session.access_token;
-}
+});
 
 export async function adminFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const accessToken = await token();

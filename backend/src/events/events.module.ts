@@ -13,6 +13,8 @@ import { AdminAuditController } from "./audit.controller";
 import { AuditService } from "./audit.service";
 import { AdminUsersController } from "./admin-users.controller";
 import { AdminUsersService } from "./admin-users.service";
+import { PublicEventsController } from "./public-events.controller";
+import { PublicEventsService } from "./public-events.service";
 
-@Module({ imports: [IdentityModule], controllers: [AdminEventsController, AdminEventImagesController, AdminTicketTypesController, AdminEventStaffController, AdminAuditController, AdminUsersController], providers: [EventsService, EventImagesService, StorageService, TicketTypesService, EventStaffService, AuditService, AdminUsersService] })
+@Module({ imports: [IdentityModule], controllers: [AdminEventsController, AdminEventImagesController, AdminTicketTypesController, AdminEventStaffController, AdminAuditController, AdminUsersController, PublicEventsController], providers: [EventsService, EventImagesService, StorageService, TicketTypesService, EventStaffService, AuditService, AdminUsersService, PublicEventsService] })
 export class EventsModule {}

@@ -4,13 +4,13 @@ Vtickets es una plataforma en desarrollo para publicar eventos locales y vender 
 
 ## Estado actual
 
-- **Web pública:** portada, catálogo, búsqueda, filtros y detalle de eventos. Sin una API configurada muestra eventos de demostración; sus precios y disponibilidad son ilustrativos y la compra está deshabilitada.
+- **Web pública:** portada, catálogo, búsqueda, filtros y detalle conectados con eventos publicados de la API. Si la API no responde, muestra un error; la compra sigue deshabilitada hasta las fases 06 y 07.
 - **Identidad:** registro, inicio y cierre de sesión, recuperación y actualización de contraseña mediante Supabase Auth. El área de cuenta consulta el perfil y los roles en la API.
-- **API:** base en NestJS con verificación de JWT, permisos, rutas de perfil, endpoints de salud y documentación OpenAPI.
+- **API:** NestJS con verificación de JWT, permisos, administración y consulta pública de eventos, rutas de perfil, endpoints de salud y documentación OpenAPI.
 - **Datos:** modelo de negocio en PostgreSQL, esquema Prisma, migraciones SQL versionadas y verificaciones de la fase de datos.
 - **Calidad:** pruebas del backend y flujo de CI en GitHub Actions.
 
-La administración de eventos, el inventario operativo, las reservas, los pagos, la emisión de tickets y el escaneo de QR siguen pendientes. Consulta [plan.md](plan.md) para el avance y el orden de las siguientes entregas.
+Las fases 01–05 están cerradas. Reservas, pagos, emisión de tickets y escaneo de QR siguen pendientes. Consulta [plan.md](plan.md) para el avance y el orden de las siguientes entregas.
 
 ## Tecnologías
 

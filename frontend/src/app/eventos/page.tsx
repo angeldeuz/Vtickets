@@ -2,15 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { EventCard } from "@/components/event-card";
-import { DemoNotice } from "@/components/demo-notice";
 import { getEvents } from "@/lib/events";
 
 export const metadata: Metadata = { title: "Explorar eventos" };
-const categories = ["Todos", "Música", "Arte y cultura", "Gastronomía", "Experiencias"];
 
 export default async function EventsPage({ searchParams }: { searchParams: Promise<{ q?: string; categoria?: string }> }) {
   const params = await searchParams;
-  const { events, isDemo, error } = await getEvents();
+  const { events, error } = await getEvents();
+  const categories = ["Todos", ...new Set(events.map((event) => event.category))];
   const query = (params.q ?? "").trim();
   const category = categories.includes(params.categoria ?? "") ? params.categoria! : "Todos";
   const search = query.toLocaleLowerCase("es-MX");
@@ -37,7 +36,6 @@ export default async function EventsPage({ searchParams }: { searchParams: Promi
       </section>
       <section className="catalog-content">
         <div className="container">
-          {isDemo ? <DemoNotice /> : null}
           <form className="search-form" action="/eventos" role="search">
             <Search size={20} aria-hidden="true" />
             <label className="sr-only" htmlFor="event-search">Buscar eventos, lugares o ciudades</label>

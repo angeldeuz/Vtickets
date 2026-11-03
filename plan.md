@@ -246,12 +246,14 @@ La fase 04 depende de la fase 03. Tras el cierre de F02 y F03 el 28 de octubre, 
 
 **Dependencias:** fase 04.
 
-- [ ] F05-T01 — Construir landing, catálogo y detalle del evento.
-- [ ] F05-T02 — Mostrar información del recinto, fechas, tipos de entrada, precios y disponibilidad entregada por la API.
-- [ ] F05-T03 — Integrar navegación de registro, inicio de sesión y área de cliente.
-- [ ] F05-T04 — Resolver estados de carga, catálogo vacío, evento agotado, no disponible y errores de comunicación.
-- [ ] F05-T05 — Adaptar las pantallas a móvil y verificar navegación por teclado, etiquetas y mensajes comprensibles.
-- [ ] F05-T06 — Incorporar un recorrido didáctico comentado del catálogo desde la página de Next.js hasta el controlador, servicio y consulta de datos en NestJS, y de regreso a la pantalla.
+**Estado — 3 de noviembre de 2026:** fase completada. El propietario revisó la experiencia pública en escritorio y móvil y confirmó que la navegación con teclado, las etiquetas y los mensajes se ven y funcionan bien. La revisión visual general de F11 y la sustitución de la portada de prueba por material propio antes de abrir ventas siguen como mejoras posteriores.
+
+- [x] F05-T01 — Construir landing, catálogo y detalle del evento. [Registro de F05](docs/fase-05/README.md).
+- [x] F05-T02 — Mostrar información del recinto, fechas, tipos de entrada, precios y disponibilidad entregada por la API.
+- [x] F05-T03 — Integrar navegación de registro, inicio de sesión y área de cliente.
+- [x] F05-T04 — Resolver estados de carga, catálogo vacío, evento agotado, no disponible y errores de comunicación.
+- [x] F05-T05 — Adaptar las pantallas a móvil y verificar navegación por teclado, etiquetas y mensajes comprensibles.
+- [x] F05-T06 — Incorporar un recorrido didáctico comentado del catálogo desde la página de Next.js hasta el controlador, servicio y consulta de datos en NestJS, y de regreso a la pantalla.
 
 **Entregables:** web pública conectada con eventos reales de la aplicación.
 

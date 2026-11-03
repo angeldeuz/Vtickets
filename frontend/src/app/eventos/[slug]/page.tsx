@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, Clock3, MapPin, Ticket } from "lucide-react";
 import { notFound } from "next/navigation";
-import { DemoNotice } from "@/components/demo-notice";
-import { formatDate, formatMoney, getEvent } from "@/lib/events";
+import { availablePrice, eventAvailability, formatDate, formatMoney, formatTime, getEvent } from "@/lib/events";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -13,30 +12,29 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function EventDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { event, isDemo, error } = await getEvent(slug);
+  const { event, error } = await getEvent(slug);
   if (error) {
     return <div className="container message-state detail-error" role="alert"><h1>No se pudo cargar el evento</h1><p>Actualiza la página para intentarlo de nuevo.</p><Link href="/eventos">Volver al catálogo</Link></div>;
   }
   if (!event) notFound();
 
-  const available = event.tickets.filter((ticket) => ticket.available > 0);
-  const startingPrice = available.length > 0 ? Math.min(...available.map((ticket) => ticket.price)) : null;
+  const startingPrice = availablePrice(event);
 
   return (
     <>
       <section className="detail-hero">
         <div className="container">
           <Link href="/eventos" className="back-link"><ArrowLeft size={18} aria-hidden="true" /> Todos los eventos</Link>
-          {isDemo ? <DemoNotice /> : null}
+          {event.cover ? <img className="detail-cover" src={`/eventos/${event.slug}/imagen`} alt={event.cover.alt} /> : null}
           <div className="detail-hero-grid">
             <div className="detail-intro">
               <h1>{event.title}</h1>
               <p className="detail-category">{event.category}</p>
-              <p className="detail-description">{event.description}</p>
+              <p className="detail-description">{event.description || event.summary}</p>
               <dl className="detail-facts">
-                <div><dt><CalendarDays size={20} aria-hidden="true" /> Fecha</dt><dd>{formatDate(event.date)} de {event.date.slice(0, 4)}</dd></div>
-                <div><dt><Clock3 size={20} aria-hidden="true" /> Hora</dt><dd>{event.time} h, hora del evento</dd></div>
-                <div><dt><MapPin size={20} aria-hidden="true" /> Lugar</dt><dd>{event.venue}, {event.city}</dd></div>
+                <div><dt><CalendarDays size={20} aria-hidden="true" /> Fecha</dt><dd>{formatDate(event)}</dd></div>
+                <div><dt><Clock3 size={20} aria-hidden="true" /> Hora</dt><dd>{formatTime(event)} h, hora del evento</dd></div>
+                <div><dt><MapPin size={20} aria-hidden="true" /> Lugar</dt><dd>{event.venue}{event.address ? `, ${event.address}` : ""}{event.city ? `, ${event.city}` : ""}{event.region ? `, ${event.region}` : ""}</dd></div>
               </dl>
             </div>
             <aside className="tickets-panel" aria-labelledby="tickets-heading">
@@ -48,13 +46,13 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                 <div className="ticket-options">
                   {event.tickets.map((ticket) => (
                     <div className="ticket-option" key={ticket.name}>
-                      <div><strong>{ticket.name}</strong><span>{ticket.available > 0 ? `${ticket.available} lugares disponibles` : "Agotado"}</span></div>
+                      <div><strong>{ticket.name}</strong>{ticket.description ? <small>{ticket.description}</small> : null}<span>{ticket.saleStatus === "available" ? `${ticket.available} lugares disponibles` : ticket.saleStatus === "upcoming" ? "Venta próximamente" : ticket.saleStatus === "closed" ? "Venta finalizada" : "Agotado"}</span></div>
                       <strong>{formatMoney(ticket.price)} <small>MXN</small></strong>
                     </div>
                   ))}
                 </div>
               )}
-              <div className="ticket-total"><span>Precio total desde</span><strong>{startingPrice === null ? "Sin disponibilidad" : `${formatMoney(startingPrice)} MXN`}</strong></div>
+              <div className="ticket-total"><span>Precio total desde</span><strong>{startingPrice === null ? eventAvailability(event) : `${formatMoney(startingPrice)} MXN`}</strong></div>
               <p className="panel-note">La compra se habilitará cuando estén listas las reservas y los pagos. Esta vista todavía no permite adquirir entradas.</p>
             </aside>
           </div>

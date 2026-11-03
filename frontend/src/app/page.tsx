@@ -1,26 +1,22 @@
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, CalendarDays, MapPin, Ticket } from "lucide-react";
-import { DemoNotice } from "@/components/demo-notice";
 import { EventCard } from "@/components/event-card";
-import { formatDate, formatMoney, getEvents } from "@/lib/events";
+import { availablePrice, eventAvailability, formatDate, formatMoney, formatTime, getEvents } from "@/lib/events";
 
 // Página de servidor: la fuente de eventos se consulta antes de enviar HTML.
-// La vista previa conserva una señal explícita mientras no exista la API real.
+// El resultado se obtiene del controlador público de NestJS antes de renderizar.
 export default async function HomePage() {
-  const { events, isDemo, error } = await getEvents();
+  const { events, error } = await getEvents();
   const featured = events[0];
-  const availableTickets = featured?.tickets.filter((ticket) => ticket.available > 0) ?? [];
-  const startingPrice = availableTickets.length > 0
-    ? Math.min(...availableTickets.map((ticket) => ticket.price))
-    : null;
+  const startingPrice = featured ? availablePrice(featured) : null;
 
   return (
     <>
       <section className="hero">
         <div className="container hero-grid">
           <div className="hero-copy">
-            <h1>Tu próximo evento, con todo claro desde el inicio.</h1>
-            <p>Descubre qué hay para hacer, revisa fecha, recinto y precio total, y elige el plan que va contigo.</p>
+            <h1>Eventos para vivir.</h1>
+            <p>Descubre la cartelera local. Consulta fecha, recinto, entradas y precio antes de elegir.</p>
             <div className="hero-actions">
               <Link href="/eventos" className="button button-coral">Explorar eventos <ArrowUpRight size={19} aria-hidden="true" /></Link>
               <Link href="/#como-funciona" className="text-link">Cómo funciona <ArrowRight size={18} aria-hidden="true" /></Link>
@@ -30,28 +26,26 @@ export default async function HomePage() {
           {featured ? (
             <article className="hero-ticket" aria-label="Evento destacado">
               <div className="ticket-head">
-                <span>{isDemo ? "Evento de muestra" : "Evento destacado"}</span>
                 <Ticket size={23} aria-hidden="true" />
               </div>
               <div className="ticket-main">
-                <span className="ticket-category">{featured.category}</span>
                 <h2>{featured.title}</h2>
-                <p>{featured.description}</p>
+                <p>{featured.category} · {featured.summary || featured.description}</p>
               </div>
               <div className="ticket-facts">
-                <div><CalendarDays size={19} aria-hidden="true" /><span><strong>{formatDate(featured.date)}</strong>{featured.time} h</span></div>
+                <div><CalendarDays size={19} aria-hidden="true" /><span><strong>{formatDate(featured)}</strong>{formatTime(featured)} h</span></div>
                 <div><MapPin size={19} aria-hidden="true" /><span><strong>{featured.venue}</strong>{featured.city}</span></div>
               </div>
               <div className="ticket-foot">
-                <span>{startingPrice === null ? "Entradas agotadas" : <>Precio total desde <strong>{formatMoney(startingPrice)} MXN</strong></>}</span>
+                <span>{startingPrice === null ? eventAvailability(featured) : <>Precio total desde <strong>{formatMoney(startingPrice)} MXN</strong></>}</span>
                 <Link href={`/eventos/${featured.slug}`}>Ver evento <ArrowUpRight size={18} aria-hidden="true" /></Link>
               </div>
             </article>
           ) : (
             <div className="hero-ticket hero-ticket-empty">
               <Ticket size={38} aria-hidden="true" />
-              <h2>La cartelera se está preparando</h2>
-              <p>Vuelve pronto para encontrar eventos disponibles.</p>
+              <h2>{error ? "No pudimos cargar la cartelera" : "La cartelera se está preparando"}</h2>
+              <p>{error ? "Intenta actualizar la página." : "Vuelve pronto para encontrar eventos disponibles."}</p>
             </div>
           )}
         </div>
@@ -59,7 +53,6 @@ export default async function HomePage() {
 
       <section className="section events-section" id="eventos">
         <div className="container">
-          {isDemo ? <DemoNotice /> : null}
           <div className="section-heading">
             <div>
               <h2>Explora los eventos</h2>

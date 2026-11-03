@@ -14,6 +14,8 @@ export function SiteHeader() {
           <Link href="/#como-funciona">Cómo funciona</Link>
         </nav>
         <div className="header-right">
+          <Link className="header-account" href="/ingresar">Ingresar</Link>
+          <Link className="header-account" href="/registro">Crear cuenta</Link>
           <Link className="header-account" href="/cuenta">Mi cuenta</Link>
           <Link className="header-action" href="/eventos">Ver eventos <ArrowUpRight size={17} aria-hidden="true" /></Link>
         </div>

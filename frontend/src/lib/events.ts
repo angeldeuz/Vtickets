@@ -25,21 +25,36 @@ export type Event = {
   tickets: TicketType[];
 };
 
-export type EventResult = { events: Event[]; error: boolean };
+export type EventResult = { events: Event[]; nextCursor: string | null; error: boolean };
+export type EventListOptions = { limit?: number; cursor?: string; q?: string; category?: string; city?: string; from?: string };
 
 const apiUrl = process.env.VTICKETS_API_URL?.trim() || "http://127.0.0.1:3001/api/v1";
 
 // Esta función corre en el servidor de Next.js. La petición HTTP llega al
 // controlador público de NestJS, que lee PostgreSQL; luego React genera el HTML.
-export async function getEvents(): Promise<EventResult> {
+export async function getEvents(options: EventListOptions = {}): Promise<EventResult> {
   try {
-    const response = await fetch(`${apiUrl.replace(/\/$/, "")}/public/events`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(options)) if (value !== undefined && value !== "") query.set(key, String(value));
+    const response = await fetch(`${apiUrl.replace(/\/$/, "")}/public/events${query.size ? `?${query}` : ""}`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
     if (!response.ok) throw new Error(`API ${response.status}`);
     const data: unknown = await response.json();
-    if (!Array.isArray(data)) throw new Error("Formato de eventos inválido");
-    return { events: data as Event[], error: false };
+    if (!data || typeof data !== "object" || !("items" in data) || !Array.isArray(data.items) || !("nextCursor" in data) || (data.nextCursor !== null && typeof data.nextCursor !== "string")) throw new Error("Formato de eventos inválido");
+    return { events: data.items as Event[], nextCursor: data.nextCursor, error: false };
   } catch {
-    return { events: [], error: true };
+    return { events: [], nextCursor: null, error: true };
+  }
+}
+
+export async function getEventCategories(): Promise<{ categories: string[]; error: boolean }> {
+  try {
+    const response = await fetch(`${apiUrl.replace(/\/$/, "")}/categories`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
+    if (!response.ok) throw new Error(`API ${response.status}`);
+    const data: unknown = await response.json();
+    if (!Array.isArray(data)) throw new Error("Formato de categorías inválido");
+    return { categories: data.map((category: { name: string }) => category.name), error: false };
+  } catch {
+    return { categories: [], error: true };
   }
 }
 
@@ -63,7 +78,7 @@ export function formatTime(event: Event): string {
 }
 
 export function formatMoney(amount: number): string {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(amount);
+  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
 }
 
 export function availablePrice(event: Event): number | null {

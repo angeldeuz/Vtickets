@@ -27,8 +27,8 @@ Un perfil suspendido o eliminado recibe `403 ACCOUNT_INACTIVE` en operaciones de
 
 | Método y ruta | Solicitud | Respuesta |
 |---|---|---|
-| `GET /events` | `city?`, `category?`, `from?`, `limit?`, `cursor?` | `200` lista de eventos `published`, ordenada por `(startsAt, id)`, con título, resumen, recinto, portada y precio desde. |
-| `GET /events/{slug}` | — | `200` detalle público con `id`, título, descripción, zona horaria, fechas, recinto, imágenes y tipos vendibles con disponibilidad calculada. `404` para borrador u otro evento no público. |
+| `GET /public/events` | `city?`, `category?`, `from?`, `q?`, `limit?`, `cursor?` | `200` `{ items, nextCursor }` de eventos `published`, ordenados por `(startsAt, id)`, con título, resumen, recinto, portada y tipos de entrada. |
+| `GET /public/events/{slug}` | — | `200` detalle público con `id`, título, descripción, zona horaria, fechas, recinto, imágenes y tipos vendibles con disponibilidad calculada. `404` para borrador u otro evento no público. |
 | `GET /categories` | — | `200` categorías activas. |
 
 `AGOTADO` se calcula a partir de tipos vendibles e inventario; no se toma de una etiqueta persistida del evento. La disponibilidad mostrada es informativa hasta que la reserva se confirma.

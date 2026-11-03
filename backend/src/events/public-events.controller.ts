@@ -1,11 +1,12 @@
-import { Controller, Get, Param, Res } from "@nestjs/common";
+import { Controller, Get, Param, Query, Res } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";
 import { z } from "zod";
 import { validateInput } from "../common/validate-input";
 import { PublicEventsService } from "./public-events.service";
+import { publicEventListSchema } from "./public-events.schemas";
 
-const slugSchema = z.string().min(1).max(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+const slugSchema = z.string().min(2).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
 // Rutas sin guard: solo consultan eventos publicados. La autorización de edición
 // permanece en los controladores administrativos de la fase anterior.
@@ -16,7 +17,7 @@ export class PublicEventsController {
 
   @Get()
   @ApiOperation({ summary: "Cartelera pública de próximos eventos publicados" })
-  list() { return this.events.list(); }
+  list(@Query() query: unknown) { return this.events.list(validateInput(publicEventListSchema, query, "Filtros de eventos no válidos")); }
 
   @Get(":slug")
   @ApiOperation({ summary: "Detalle público de un evento publicado" })

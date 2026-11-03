@@ -167,6 +167,9 @@ p { text-wrap: pretty; }
 .catalog-summary { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
 .catalog-summary h2 { margin-bottom: 0; font-size: clamp(28px, 3vw, 38px); font-weight: 600; }
 .catalog-summary p { margin-bottom: 0; color: var(--muted); font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.catalog-pagination { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.catalog-pagination a { min-height: 44px; display: inline-flex; align-items: center; padding: 10px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 700; }
+.catalog-pagination a:hover { border-color: var(--ink); background: var(--ink); color: var(--surface); }
 
 .detail-hero { padding-block: 25px 80px; background: var(--ink); color: var(--surface); }
 .back-link { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 25px; color: var(--dark-soft); font-size: 14px; font-weight: 700; }

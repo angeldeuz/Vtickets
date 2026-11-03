@@ -1,7 +1,9 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { z } from "zod";
 import { PrismaService } from "../database/prisma.service";
 import { StorageService } from "./storage.service";
 import type { Prisma } from "../../generated/prisma/client";
+import type { PublicEventList } from "./public-events.schemas";
 
 const relations = {
   refCategoryId: { select: { name: true } },
@@ -21,19 +23,70 @@ const relations = {
 
 type PublicEventRow = Prisma.EventoGetPayload<{ include: typeof relations }>;
 
+const cursorSchema = z.strictObject({
+  version: z.literal(1),
+  startsAt: z.iso.datetime(),
+  id: z.uuid(),
+  asOf: z.iso.datetime(),
+  filters: z.strictObject({ limit: z.number().int(), city: z.string().nullable(), category: z.string().nullable(), from: z.string().nullable(), q: z.string().nullable() }),
+});
+
+function filtersOf(query: PublicEventList) {
+  return { limit: query.limit, city: query.city ?? null, category: query.category ?? null, from: query.from ?? null, q: query.q ?? null };
+}
+
+function decodeCursor(value: string, query: PublicEventList) {
+  try {
+    const cursor = cursorSchema.parse(JSON.parse(Buffer.from(value, "base64url").toString("utf8")));
+    if (JSON.stringify(cursor.filters) !== JSON.stringify(filtersOf(query))) throw new Error("Filtros incompatibles");
+    return cursor;
+  } catch {
+    throw new BadRequestException("Cursor de eventos no válido para estos filtros");
+  }
+}
+
 // Recorrido público: Next.js llama al controlador, este servicio lee PostgreSQL
 // con Prisma y devuelve solo campos de catálogo. Nunca expone rutas de Storage.
 @Injectable()
 export class PublicEventsService {
   constructor(private readonly database: PrismaService, private readonly storage: StorageService) {}
 
-  async list() {
+  async list(query: PublicEventList) {
+    const cursor = query.cursor ? decodeCursor(query.cursor, query) : null;
+    const asOf = cursor ? new Date(cursor.asOf) : new Date();
+    const from = query.from ? new Date(query.from) : null;
+    const threshold = from && from > asOf ? from : asOf;
+    const where: Prisma.EventoWhereInput = {
+      status: "published", startsAt: { gt: threshold },
+      AND: [
+        ...(query.city ? [{ refVenueId: { is: { city: query.city } } }] : []),
+        ...(query.category ? [{ refCategoryId: { is: { name: query.category } } }] : []),
+        ...(query.q ? [{ OR: [
+          { title: { contains: query.q, mode: "insensitive" as const } },
+          { summary: { contains: query.q, mode: "insensitive" as const } },
+          { refVenueId: { is: { OR: [
+            { name: { contains: query.q, mode: "insensitive" as const } },
+            { city: { contains: query.q, mode: "insensitive" as const } },
+          ] } } },
+        ] }] : []),
+        ...(cursor ? [{ OR: [
+          { startsAt: { gt: new Date(cursor.startsAt) } },
+          { startsAt: new Date(cursor.startsAt), id: { gt: cursor.id } },
+        ] }] : []),
+      ],
+    };
     const rows = await this.database.client.evento.findMany({
-      where: { status: "published", startsAt: { gt: new Date() } },
+      where,
       include: relations,
       orderBy: [{ startsAt: "asc" }, { id: "asc" }],
+      take: query.limit + 1,
     });
-    return rows.map((row) => this.present(row));
+    const items = rows.slice(0, query.limit);
+    const last = items.at(-1);
+    const nextCursor = rows.length > query.limit && last ? Buffer.from(JSON.stringify({
+      version: 1, startsAt: last.startsAt.toISOString(), id: last.id, asOf: asOf.toISOString(), filters: filtersOf(query),
+    })).toString("base64url") : null;
+    return { items: items.map((row) => this.present(row)), nextCursor };
   }
 
   async get(slug: string) {

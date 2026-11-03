@@ -9,7 +9,7 @@ describe("rutas públicas F05", () => {
   let app: INestApplication;
   let missing = false;
   const events = {
-    list: async () => [{ slug: "concierto", title: "Concierto" }],
+    list: async () => ({ items: [{ slug: "concierto", title: "Concierto" }], nextCursor: null }),
     get: async (slug: string) => { if (missing) throw new NotFoundException("Evento no disponible"); return { slug, title: "Concierto" }; },
     cover: async () => { if (missing) throw new NotFoundException("Imagen no disponible"); return { bytes: Buffer.from("image"), mime: "image/png" }; },
   };
@@ -30,9 +30,17 @@ describe("rutas públicas F05", () => {
 
   it("permite descubrir eventos y su detalle sin iniciar sesión", async () => {
     await request(app.getHttpServer()).get("/api/v1/public/events").expect(200).expect((res) => {
-      expect(res.body[0].slug).toBe("concierto");
+      expect(res.body.items[0].slug).toBe("concierto");
+      expect(res.body.nextCursor).toBeNull();
     });
     await request(app.getHttpServer()).get("/api/v1/public/events/concierto").expect(200);
+  });
+
+  it("acepta slugs de 160 caracteres y rechaza límites de página inválidos", async () => {
+    const slug = "a".repeat(160);
+    await request(app.getHttpServer()).get(`/api/v1/public/events/${slug}`).expect(200);
+    await request(app.getHttpServer()).get(`/api/v1/public/events/${slug}/cover`).expect(200);
+    await request(app.getHttpServer()).get("/api/v1/public/events?limit=51").expect(400);
   });
 
   it("no muestra un evento no disponible ni su portada", async () => {

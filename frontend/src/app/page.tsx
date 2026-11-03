@@ -6,7 +6,7 @@ import { availablePrice, eventAvailability, formatDate, formatMoney, formatTime,
 // Página de servidor: la fuente de eventos se consulta antes de enviar HTML.
 // El resultado se obtiene del controlador público de NestJS antes de renderizar.
 export default async function HomePage() {
-  const { events, error } = await getEvents();
+  const { events, error } = await getEvents({ limit: 3 });
   const featured = events[0];
   const startingPrice = featured ? availablePrice(featured) : null;
 

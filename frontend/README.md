@@ -31,7 +31,7 @@ La carpeta `src/app` define las rutas del App Router. `layout.tsx` contiene la e
 
 ## Contrato público de lectura
 
-`GET {VTICKETS_API_URL}/public/events` devuelve los próximos eventos publicados; `GET .../public/events/{slug}` devuelve el detalle de uno publicado. Cada evento contiene `id`, `slug`, `title`, `summary`, `description`, `category`, `startsAt`, `timezone`, `venue`, `address`, `city`, `region`, `cover` y `tickets`. Cada entrada incluye `id`, `name`, `description`, `price` en MXN, `currency`, `available` y `saleStatus`. `GET .../public/events/{slug}/cover` sirve la portada únicamente si el evento está publicado.
+`GET {VTICKETS_API_URL}/public/events` devuelve `{ items, nextCursor }` con los próximos eventos publicados. Admite `limit` (1–50), `cursor`, `q`, `category`, `city` y `from`; la búsqueda y los filtros se aplican antes de la paginación. `GET .../public/events/{slug}` devuelve el detalle de uno publicado. Cada evento contiene `id`, `slug`, `title`, `summary`, `description`, `category`, `startsAt`, `timezone`, `venue`, `address`, `city`, `region`, `cover` y `tickets`. Cada entrada incluye `id`, `name`, `description`, `price` en MXN, `currency`, `available` y `saleStatus`. `GET .../public/events/{slug}/cover` sirve la portada únicamente si el evento está publicado.
 
 Al configurar la API, un error de conexión muestra un estado de error; la web nunca sustituye un fallo de API con eventos ficticios. Catálogo vacío, búsqueda sin coincidencias y evento inexistente tienen estados propios.
 

@@ -27,7 +27,6 @@ const cursorSchema = z.strictObject({
   version: z.literal(1),
   startsAt: z.iso.datetime(),
   id: z.uuid(),
-  asOf: z.iso.datetime(),
   filters: z.strictObject({ limit: z.number().int(), city: z.string().nullable(), category: z.string().nullable(), from: z.string().nullable(), q: z.string().nullable() }),
 });
 
@@ -53,9 +52,10 @@ export class PublicEventsService {
 
   async list(query: PublicEventList) {
     const cursor = query.cursor ? decodeCursor(query.cursor, query) : null;
-    const asOf = cursor ? new Date(cursor.asOf) : new Date();
     const from = query.from ? new Date(query.from) : null;
-    const threshold = from && from > asOf ? from : asOf;
+    // Cada página vuelve a excluir eventos que ya empezaron; el cursor solo fija el orden.
+    const now = new Date(Date.now());
+    const threshold = from && from > now ? from : now;
     const where: Prisma.EventoWhereInput = {
       status: "published", startsAt: { gt: threshold },
       AND: [
@@ -84,7 +84,7 @@ export class PublicEventsService {
     const items = rows.slice(0, query.limit);
     const last = items.at(-1);
     const nextCursor = rows.length > query.limit && last ? Buffer.from(JSON.stringify({
-      version: 1, startsAt: last.startsAt.toISOString(), id: last.id, asOf: asOf.toISOString(), filters: filtersOf(query),
+      version: 1, startsAt: last.startsAt.toISOString(), id: last.id, filters: filtersOf(query),
     })).toString("base64url") : null;
     return { items: items.map((row) => this.present(row)), nextCursor };
   }

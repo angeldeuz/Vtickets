@@ -64,6 +64,26 @@ describe("catálogo público F05", () => {
     await expect(service.list({ limit: 1, category: "Otra", q: "Teatro", cursor: first.nextCursor! })).rejects.toMatchObject({ status: 400 });
   });
 
+  it("excluye en páginas posteriores los eventos que empezaron desde la primera consulta", async () => {
+    const actualNow = Date.now;
+    try {
+      Date.now = () => new Date("2030-01-01T09:00:00Z").getTime();
+      currentRow.startsAt = new Date("2030-01-01T09:15:00Z");
+      listRows = [currentRow, { ...currentRow, id: "22222222-2222-4222-8222-222222222222", startsAt: new Date("2030-01-01T09:30:00Z") }];
+      const first = await service.list({ limit: 1 });
+      expect(first.nextCursor).toEqual(expect.any(String));
+      expect(listOptions.where).toMatchObject({ startsAt: { gt: new Date("2030-01-01T09:00:00Z") } });
+
+      Date.now = () => new Date("2030-01-01T10:00:00Z").getTime();
+      await service.list({ limit: 1, cursor: first.nextCursor! });
+      expect(listOptions.where).toMatchObject({ startsAt: { gt: new Date("2030-01-01T10:00:00Z") } });
+      const cursor = JSON.parse(Buffer.from(first.nextCursor!, "base64url").toString("utf8"));
+      expect(cursor).not.toHaveProperty("asOf");
+    } finally {
+      Date.now = actualNow;
+    }
+  });
+
   it("no entrega detalle de un evento no publicado", async () => {
     detailRow = null;
     await expect(service.get("borrador")).rejects.toMatchObject({ status: 404 });

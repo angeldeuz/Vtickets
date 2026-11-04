@@ -12,6 +12,7 @@
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
     "db:verify-f02": "node scripts/verify-f02-schema.mjs",
+    "db:verify-f06": "npm run build && node scripts/verify-f06.mjs && node scripts/verify-f06-locking.mjs && node scripts/verify-f06-concurrent.mjs",
     "db:verify-runtime": "node scripts/verify-runtime.mjs",
     "db:inspect-f02": "node scripts/verify-f02-schema.mjs --inspect"
   },

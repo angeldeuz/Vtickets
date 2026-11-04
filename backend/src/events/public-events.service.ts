@@ -11,7 +11,7 @@ const relations = {
   fromTipoTicketEventId: {
     where: { status: "active" },
     select: { id: true, name: true, description: true, priceCents: true, currency: true,
-      quantityTotal: true, salesStartsAt: true, salesEndsAt: true,
+      quantityTotal: true, maxPerOrder: true, maxPerUser: true, salesStartsAt: true, salesEndsAt: true,
       fromInventarioTicketTypeId: { select: { reservedCount: true, soldCount: true } } },
     orderBy: { priceCents: "asc" },
   },
@@ -86,7 +86,8 @@ export class PublicEventsService {
     const nextCursor = rows.length > query.limit && last ? Buffer.from(JSON.stringify({
       version: 1, startsAt: last.startsAt.toISOString(), id: last.id, filters: filtersOf(query),
     })).toString("base64url") : null;
-    return { items: items.map((row) => this.present(row)), nextCursor };
+    const held = await this.liveReservations(items, now);
+    return { items: items.map((row) => this.present(row, held)), nextCursor };
   }
 
   async get(slug: string) {
@@ -94,7 +95,7 @@ export class PublicEventsService {
       where: { slug, status: "published" }, include: relations,
     });
     if (!row) throw new NotFoundException("Evento no disponible");
-    return this.present(row);
+    return this.present(row, await this.liveReservations([row], new Date()));
   }
 
   async cover(slug: string) {
@@ -107,17 +108,32 @@ export class PublicEventsService {
     return this.storage.download(cover.storagePath);
   }
 
-  private present(row: PublicEventRow) {
+  // El contador se libera por el worker, pero el catálogo descuenta solamente reservas vigentes.
+  // Así un worker detenido no mantiene artificialmente agotada una entrada vencida.
+  private async liveReservations(rows: PublicEventRow[], now: Date): Promise<Map<string, number>> {
+    const ids = rows.flatMap((row) => row.fromTipoTicketEventId.map((ticket) => ticket.id));
+    if (!ids.length) return new Map();
+    const details = await this.database.client.reservaDetalle.findMany({
+      where: { ticketTypeId: { in: ids }, refReservationIdEventId: { status: "active", expiresAt: { gt: now } } },
+      select: { ticketTypeId: true, quantity: true },
+    });
+    const held = new Map<string, number>();
+    for (const detail of details) held.set(detail.ticketTypeId, (held.get(detail.ticketTypeId) ?? 0) + detail.quantity);
+    return held;
+  }
+
+  private present(row: PublicEventRow, held: Map<string, number>) {
     const now = Date.now();
     const tickets = row.fromTipoTicketEventId.map((ticket) => {
-      const available = Math.max(0, ticket.quantityTotal - (ticket.fromInventarioTicketTypeId?.reservedCount ?? 0) - (ticket.fromInventarioTicketTypeId?.soldCount ?? 0));
+      const available = Math.max(0, ticket.quantityTotal - (held.get(ticket.id) ?? 0) - (ticket.fromInventarioTicketTypeId?.soldCount ?? 0));
       const start = ticket.salesStartsAt ?? row.salesStartsAt;
       const end = ticket.salesEndsAt ?? row.salesEndsAt ?? row.startsAt;
       const saleStatus = now >= row.startsAt.getTime() || now >= end.getTime() ? "closed"
         : start && now < start.getTime() ? "upcoming"
         : available === 0 ? "sold_out" : "available";
       return { id: ticket.id, name: ticket.name, description: ticket.description,
-        price: Number(ticket.priceCents) / 100, currency: ticket.currency, available, saleStatus };
+        price: Number(ticket.priceCents) / 100, currency: ticket.currency, available,
+        maxPerOrder: ticket.maxPerOrder, maxPerUser: ticket.maxPerUser, saleStatus };
     });
     const cover = row.fromEventoImagenEventId.find((image) => image.isCover);
     return { id: row.id, slug: row.slug, title: row.title, summary: row.summary,

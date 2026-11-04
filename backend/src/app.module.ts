@@ -10,6 +10,7 @@ import { EventsModule } from "./events/events.module";
 import { HealthController } from "./health/health.controller";
 import { IdentityModule } from "./identity/identity.module";
 import { OutboxModule } from "./outbox/outbox.module";
+import { ReservationsModule } from "./reservations/reservations.module";
 
 // Un módulo agrupa proveedores y controladores; Nest resuelve sus dependencias por inyección.
 @Module({
@@ -21,6 +22,7 @@ import { OutboxModule } from "./outbox/outbox.module";
     CatalogModule,
     EventsModule,
     OutboxModule,
+    ReservationsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

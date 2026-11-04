@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, Clock3, MapPin, Ticket } from "lucide-react";
 import { notFound } from "next/navigation";
-import { availablePrice, eventAvailability, formatDate, formatMoney, formatTime, getEvent } from "@/lib/events";
+import { formatDate, formatTime, getEvent } from "@/lib/events";
+import { TicketSelection } from "./ticket-selection";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -17,8 +18,6 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
     return <div className="container message-state detail-error" role="alert"><h1>No se pudo cargar el evento</h1><p>Actualiza la página para intentarlo de nuevo.</p><Link href="/eventos">Volver al catálogo</Link></div>;
   }
   if (!event) notFound();
-
-  const startingPrice = availablePrice(event);
 
   return (
     <>
@@ -42,25 +41,14 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                 <span className="ticket-panel-icon" aria-hidden="true"><Ticket size={21} /></span>
                 <div><h2 id="tickets-heading">Entradas</h2><p>El precio publicado es el total en MXN.</p></div>
               </div>
-              {event.tickets.length === 0 ? <p className="tickets-empty">Aún no hay entradas publicadas.</p> : (
-                <div className="ticket-options">
-                  {event.tickets.map((ticket) => (
-                    <div className="ticket-option" key={ticket.name}>
-                      <div><strong>{ticket.name}</strong>{ticket.description ? <small>{ticket.description}</small> : null}<span>{ticket.saleStatus === "available" ? `${ticket.available} lugares disponibles` : ticket.saleStatus === "upcoming" ? "Venta próximamente" : ticket.saleStatus === "closed" ? "Venta finalizada" : "Agotado"}</span></div>
-                      <strong>{formatMoney(ticket.price)} <small>MXN</small></strong>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="ticket-total"><span>Precio total desde</span><strong>{startingPrice === null ? eventAvailability(event) : `${formatMoney(startingPrice)} MXN`}</strong></div>
-              <p className="panel-note">La compra se habilitará cuando estén listas las reservas y los pagos. Esta vista todavía no permite adquirir entradas.</p>
+              {event.tickets.length === 0 ? <p className="tickets-empty">Aún no hay entradas publicadas.</p> : <TicketSelection event={event} />}
             </aside>
           </div>
         </div>
       </section>
       <section className="detail-content">
         <div className="container detail-content-inner">
-          <div><h2>Antes de elegir</h2><p>Comprueba la fecha, el recinto y el tipo de entrada. Cada boleto comprado tendrá su propio ticket con QR cuando la venta esté disponible.</p></div>
+          <div><h2>Antes de elegir</h2><p>Comprueba la fecha, el recinto y el tipo de entrada. Puedes reservar hasta cuatro entradas por evento.</p></div>
           <Link href="/eventos" className="button button-dark">Explorar otros eventos</Link>
         </div>
       </section>

@@ -10,7 +10,7 @@ import { supabaseConfig } from "@/lib/supabase/config";
 
 type Mode = "login" | "signup" | "recovery";
 
-export function AuthForm({ mode }: { mode: Mode }) {
+export function AuthForm({ mode, afterLogin }: { mode: Mode; afterLogin?: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -36,7 +36,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) { setErrors({ password: "Revisa el correo y la contraseña." }); setMessage("No pudimos iniciar sesión. Revisa tus datos e inténtalo otra vez."); requestAnimationFrame(() => document.getElementById("auth-password")?.focus()); return; }
-        router.push("/cuenta");
+        router.push(afterLogin ?? "/cuenta");
         router.refresh();
       } else if (mode === "signup") {
         const { data: result, error } = await supabase.auth.signUp({

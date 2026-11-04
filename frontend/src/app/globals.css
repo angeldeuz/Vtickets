@@ -196,10 +196,28 @@ p { text-wrap: pretty; }
 .ticket-option div span { color: var(--muted); font-size: 13px; }
 .ticket-option > strong { white-space: nowrap; font-size: 17px; font-variant-numeric: tabular-nums; }
 .ticket-option small { font-size: 11px; }
+.ticket-selection { display: grid; gap: 16px; }
+.ticket-quantity { display: inline-flex; align-items: center; gap: 9px; margin-top: 10px; font-size: 13px; font-weight: 700; }
+.ticket-quantity select { min-width: 68px; min-height: 42px; padding: 7px 10px; border: 1px solid #80929c; border-radius: 6px; background: white; color: var(--ink); font: inherit; }
+.ticket-quantity select[aria-invalid="true"] { border: 2px solid #b4352b; background: #fff5f3; }
+.field-error { margin: 0; color: #a72d24; font-size: 14px; font-weight: 700; }
+.ticket-selection .button { width: 100%; cursor: pointer; }
+.ticket-selection .button:disabled { opacity: .55; cursor: not-allowed; }
+.ticket-selection .panel-note { margin: 0; }
 .tickets-empty { margin-bottom: 20px; color: var(--muted); }
 .ticket-total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 16px 0; border-top: 2px solid var(--ink); }
 .ticket-total span { color: var(--muted); font-size: 13px; }
 .ticket-total strong { font: 600 22px var(--font-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.purchase-page { max-width: 800px; padding-block: 55px 95px; }
+.purchase-page .back-link { color: var(--ink); }
+.purchase-page h1 { font-size: clamp(38px, 5vw, 62px); line-height: 1.08; letter-spacing: -.04em; }
+.purchase-state { font-size: 20px; font-weight: 700; }
+.purchase-countdown { color: #8d3026; font-weight: 700; font-variant-numeric: tabular-nums; }
+.purchase-lines { margin-top: 36px; border-top: 2px solid var(--ink); }
+.purchase-line { display: flex; justify-content: space-between; gap: 20px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.purchase-line div { display: grid; gap: 5px; }
+.purchase-line span { color: var(--muted); }
+.purchase-total { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 28px; padding: 20px 0; font-size: 20px; font-weight: 700; }
 .panel-note { margin: 10px 0 0; padding: 13px 14px; background: var(--canvas); border-radius: 8px; color: var(--muted); font-size: 13px; line-height: 1.55; }
 .detail-content { padding-block: 62px 75px; }
 .detail-content-inner { display: flex; align-items: center; justify-content: space-between; gap: 30px; }

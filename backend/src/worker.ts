@@ -6,6 +6,7 @@ import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { OutboxService, type OutboxJob } from "./outbox/outbox.service";
+import { ReservationsService } from "./reservations/reservations.service";
 
 type Handler = (job: OutboxJob) => Promise<void>;
 // Los módulos de correo, pagos y reservas registrarán aquí sus handlers en sus fases.
@@ -21,6 +22,7 @@ async function bootstrap(): Promise<void> {
     throw new Error("El worker necesita DATABASE_URL de una cuenta PostgreSQL de privilegios mínimos");
   }
   const outbox = app.get(OutboxService);
+  const reservations = app.get(ReservationsService);
   const workerId = `${hostname()}-${process.pid}-${randomUUID()}`;
   const logger = new Logger("Worker");
   let stopping = false;
@@ -29,6 +31,7 @@ async function bootstrap(): Promise<void> {
 
   while (!stopping) {
     try {
+      await reservations.expireBatch();
       const job = await outbox.claim(workerId, Object.keys(handlers));
       if (job) {
         try {

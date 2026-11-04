@@ -5,6 +5,8 @@ export type TicketType = {
   price: number;
   currency: string;
   available: number;
+  maxPerOrder: number;
+  maxPerUser: number;
   saleStatus: "available" | "upcoming" | "sold_out" | "closed";
 };
 

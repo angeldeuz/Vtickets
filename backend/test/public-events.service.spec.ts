@@ -10,7 +10,8 @@ const row = {
   refVenueId: { name: "Teatro", addressLine1: "Calle 1", city: "Saltillo", region: "Coahuila" },
   fromEventoImagenEventId: [{ id: "cover", altText: "Escenario", isCover: true, sortOrder: 0 }],
   fromTipoTicketEventId: [{ id: "ticket-1", name: "General", description: null,
-    priceCents: 25000n, currency: "MXN", quantityTotal: 10, salesStartsAt: null as Date | null, salesEndsAt: null,
+    priceCents: 25000n, currency: "MXN", quantityTotal: 10, maxPerOrder: 4, maxPerUser: 4,
+    salesStartsAt: null as Date | null, salesEndsAt: null,
     fromInventarioTicketTypeId: { reservedCount: 3, soldCount: 2 } }],
 };
 
@@ -24,10 +25,13 @@ describe("catálogo público F05", () => {
   let currentRow: typeof row;
   let listRows: typeof row[];
   let downloads: number;
+  let heldOptions: Record<string, unknown>;
 
   beforeEach(() => {
-    listOptions = {}; detailOptions = {}; currentRow = structuredClone(row); listRows = [currentRow]; detailRow = currentRow; downloads = 0;
-    service = new PublicEventsService({ client: { evento: {
+    listOptions = {}; detailOptions = {}; heldOptions = {}; currentRow = structuredClone(row); listRows = [currentRow]; detailRow = currentRow; downloads = 0;
+    service = new PublicEventsService({ client: { reservaDetalle: {
+      findMany: async (options: Record<string, unknown>) => { heldOptions = options; return [{ ticketTypeId: "ticket-1", quantity: 3 }]; },
+    }, evento: {
       findMany: async (options: Record<string, unknown>) => { listOptions = options; return listRows; },
       findFirst: async (options: Record<string, unknown>) => { detailOptions = options; return detailRow; },
     } } } as unknown as PrismaService,
@@ -35,10 +39,12 @@ describe("catálogo público F05", () => {
   });
 
   it("solo consulta próximos eventos publicados y calcula existencias reales", async () => {
+    currentRow.fromTipoTicketEventId[0].fromInventarioTicketTypeId.reservedCount = 8;
     const events = await service.list(listQuery);
     expect(listOptions.where).toMatchObject({ status: "published", startsAt: { gt: expect.any(Date) } });
     expect(listOptions.take).toBe(21);
     expect(events.items[0].tickets[0]).toMatchObject({ price: 250, available: 5, saleStatus: "available" });
+    expect(heldOptions.where).toMatchObject({ refReservationIdEventId: { status: "active", expiresAt: { gt: expect.any(Date) } } });
     expect(events.items[0].cover).toEqual({ alt: "Escenario" });
     expect(events.nextCursor).toBeNull();
   });

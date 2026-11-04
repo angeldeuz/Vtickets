@@ -263,13 +263,15 @@ La fase 04 depende de la fase 03. Tras el cierre de F02 y F03 el 28 de octubre, 
 
 **Dependencias:** fases 04 y 05.
 
-- [ ] F06-T01 — Implementar selección de tipo de ticket y cantidad con validación de límites en backend.
-- [ ] F06-T02 — Crear reservas transaccionales que descuenten disponibilidad sin permitir sobreventa.
-- [ ] F06-T03 — Implementar expiración y liberación idempotente de reservas, incluyendo recuperación después de reiniciar procesos.
-- [ ] F06-T04 — Crear compras y detalles conservando los precios e importes calculados en servidor.
-- [ ] F06-T05 — Integrar resumen de compra, vencimiento de reserva y estados del checkout.
-- [ ] F06-T06 — Controlar solicitudes repetidas de creación de compra y transiciones incompatibles de estado.
-- [ ] F06-T07 — Probar competencia por el último boleto, reservas expiradas y límites por usuario bajo concurrencia.
+**Estado — 3 de noviembre de 2026:** completada en `feature/f06-reservas-checkout`. Reservas, expiración, compras pendientes e interfaz de selección y resumen verificadas con PostgreSQL real y pruebas automatizadas. [Registro de F06](docs/fase-06/README.md).
+
+- [x] F06-T01 — Implementar selección de tipo de ticket y cantidad con validación de límites en backend.
+- [x] F06-T02 — Crear reservas transaccionales que descuenten disponibilidad sin permitir sobreventa.
+- [x] F06-T03 — Implementar expiración y liberación idempotente de reservas, incluyendo recuperación después de reiniciar procesos.
+- [x] F06-T04 — Crear compras y detalles conservando los precios e importes calculados en servidor.
+- [x] F06-T05 — Integrar resumen de compra, vencimiento de reserva y estados del checkout.
+- [x] F06-T06 — Controlar solicitudes repetidas de creación de compra y transiciones incompatibles de estado.
+- [x] F06-T07 — Probar competencia por el último boleto, reservas expiradas y límites por usuario bajo concurrencia.
 
 **Entregables:** checkout que prepara una compra pendiente para recibir el pago.
 

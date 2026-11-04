@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { ArrowUpRight, Ticket } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const supabase = await createClient();
+  const claims = supabase ? await supabase.auth.getClaims() : null;
+  const signedIn = Boolean(claims?.data?.claims);
   return (
     <header className="site-header">
       <div className="container header-inner">
@@ -14,9 +18,10 @@ export function SiteHeader() {
           <Link href="/#como-funciona">Cómo funciona</Link>
         </nav>
         <div className="header-right">
-          <Link className="header-account" href="/ingresar">Ingresar</Link>
-          <Link className="header-account" href="/registro">Crear cuenta</Link>
-          <Link className="header-account" href="/cuenta">Mi cuenta</Link>
+          {signedIn ? <Link className="header-account" href="/cuenta">Mi cuenta</Link> : <>
+            <Link className="header-account" href="/ingresar">Ingresar</Link>
+            <Link className="header-account" href="/registro">Crear cuenta</Link>
+          </>}
           <Link className="header-action" href="/eventos">Ver eventos <ArrowUpRight size={17} aria-hidden="true" /></Link>
         </div>
       </div>
